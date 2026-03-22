@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon -x ts-node -r tsconfig-paths/register src/index.ts",
-    "build": "tsc && cp package*.json dist/",
+    "build": "tsc",
     "start": "node -r tsconfig-paths/register dist/index.js",
     "vercel-build": "npm run build",
     "test": "jest",
