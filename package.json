@@ -5,8 +5,9 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon -x ts-node -r tsconfig-paths/register src/index.ts",
-    "build": "tsc",
+    "build": "tsc && cp package*.json dist/",
     "start": "node -r tsconfig-paths/register dist/index.js",
+    "vercel-build": "npm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",
@@ -62,6 +63,7 @@
     "@types/supertest": "^2.0.16",
     "@typescript-eslint/eslint-plugin": "^6.12.0",
     "@typescript-eslint/parser": "^6.12.0",
+    "@vercel/node": "^3.0.0",
     "eslint": "^8.54.0",
     "jest": "^29.7.0",
     "nodemon": "^3.0.1",
@@ -71,7 +73,7 @@
     "typescript": "^5.2.2"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": "18.x",
     "npm": ">=8.0.0"
   }
 }
