@@ -41,30 +41,11 @@ const format = winston.format.combine(
 
 // Define which transports the logger must use
 const transports = [
-  // Console transport
+  // Console transport only for serverless compatibility
   new winston.transports.Console({
     format: winston.format.combine(
       winston.format.colorize(),
       winston.format.simple()
-    ),
-  }),
-  
-  // File transport for errors
-  new winston.transports.File({
-    filename: path.join(process.cwd(), 'logs', 'error.log'),
-    level: 'error',
-    format: winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.json()
-    ),
-  }),
-  
-  // File transport for all logs
-  new winston.transports.File({
-    filename: path.join(process.cwd(), 'logs', 'combined.log'),
-    format: winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.json()
     ),
   }),
 ];
@@ -77,13 +58,6 @@ const logger = winston.createLogger({
   transports,
   exitOnError: false,
 });
-
-// Create logs directory if it doesn't exist
-import fs from 'fs';
-const logsDir = path.join(process.cwd(), 'logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
-}
 
 // Add stream for Morgan HTTP logger
 logger.stream = {
