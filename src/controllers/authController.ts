@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { User } from '@/models';
-import { config } from '@/config/config';
-import { ApiResponse } from '@/types';
+import { User } from '../models';
+import { config } from '../config/config';
+import { ApiResponse } from '../types';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { Listing, Experience, Service, Booking, Review } from '@/models';
-import { ApiResponse, PaginationInfo, QueryParams } from '@/types';
+import { Listing, Experience, Service, Booking, Review } from '../models';
+import { ApiResponse, PaginationInfo, QueryParams } from '../types';
 
 export const getListings = async (req: Request, res: Response): Promise<void> => {
   try {

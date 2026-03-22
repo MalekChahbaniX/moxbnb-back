@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { listingController } from '@/controllers/listingController';
-import { authMiddleware } from '@/middleware/auth';
-import { roleMiddleware } from '@/middleware/auth';
-import { validateRequest, validateQuery, commonSchemas } from '@/middleware/validation';
-import { createListingSchema, updateListingSchema } from '@/utils/validationSchemas';
+import { listingController } from '../controllers/listingController';
+import { authMiddleware } from '../middleware/auth';
+import { roleMiddleware } from '../middleware/auth';
+import { validateRequest, validateQuery, commonSchemas } from '../middleware/validation';
+import { createListingSchema, updateListingSchema } from '../utils/validationSchemas';
 
 const router = Router();
 

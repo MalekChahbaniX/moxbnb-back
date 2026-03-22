@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { Booking } from '@/models';
-import { ApiResponse } from '@/types';
+import { Booking } from '../models';
+import { ApiResponse } from '../types';
 
 export const getBookings = async (req: Request, res: Response): Promise<void> => {
   try {
