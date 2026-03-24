@@ -118,6 +118,7 @@ const config: Config = {
       'http://localhost:3001',
       'http://localhost:19006',
       'https://moxbnb.com',
+      'https://moxbnb.netlify.app',
     ],
   },
   
