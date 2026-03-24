@@ -30,6 +30,8 @@ export const connectDB = async (): Promise<void> => {
     
   } catch (error) {
     logger.error('Database connection failed:', error);
-    process.exit(1);
+    // Don't exit process, just log the error and continue
+    // This allows the server to start even if DB is temporarily unavailable
+    logger.warn('Server starting without database connection');
   }
 };
