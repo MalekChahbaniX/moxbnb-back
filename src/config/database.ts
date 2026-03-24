@@ -4,7 +4,15 @@ import { logger } from '../utils/logger';
 
 export const connectDB = async (): Promise<void> => {
   try {
-    const conn = await mongoose.connect(config.database.url);
+    // Set connection options for serverless environments
+    const options = {
+      serverSelectionTimeoutMS: 5000, // 5 seconds timeout
+      socketTimeoutMS: 45000, // 45 seconds socket timeout
+      bufferMaxEntries: 0, // Disable mongoose buffering
+      bufferCommands: false, // Disable mongoose buffering
+    };
+
+    const conn = await mongoose.connect(config.database.url, options);
     
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
     
