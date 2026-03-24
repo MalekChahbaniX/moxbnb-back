@@ -63,17 +63,17 @@ interface Config {
 }
 
 const config: Config = {
-  env: process.env.NODE_ENV || 'development',
+  env: process.env.NODE_ENV || 'production',
   port: parseInt(process.env.PORT || '3000', 10),
   
   database: {
-    url: process.env.MONGODB_URI || 'mongodb://localhost:27017/moxbnb_db',
+    url: process.env.MONGODB_URI || 'mongodb+srv://malekchahbanix_db_user:OY6V7iwS7C4cgoPW@moxbnb.ivvqsv7.mongodb.net/?appName=moxbnb',
   },
   
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
+    secret: process.env.JWT_SECRET || 'eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTc3NDE4ODkzNCwiaWF0IjoxNzc0MTg4OTM0fQ.ekuoMv6bRPtbuYQW4e7J0e08vMYI_YH77xn4UMSA6Lw',
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
+    refreshSecret: process.env.JWT_REFRESH_SECRET || 'eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTc3NDE4ODkzNCwiaWF0IjoxNzc0MTg4OTM0fQ.I0HKdpSYpgtCs5aYKrsHki1jvaYrCav_WDsBV5lYSCU',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
   },
   
