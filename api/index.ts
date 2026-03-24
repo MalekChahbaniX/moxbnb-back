@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import app from '../src/index';
+import { connectDB } from '../src/config/database';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set timeout for serverless function (Vercel max is 10 seconds)
@@ -8,6 +9,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
 
   try {
+    // Ensure database is connected before handling requests
+    await connectDB();
+    
     // Forward the request to the Express app
     return app(req, res);
   } catch (error) {
