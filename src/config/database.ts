@@ -8,7 +8,7 @@ export const connectDB = async (): Promise<void> => {
     const options = {
       serverSelectionTimeoutMS: 5000, // 5 seconds timeout
       socketTimeoutMS: 45000, // 45 seconds socket timeout
-      bufferMaxEntries: 0, // Disable mongoose buffering
+      // bufferMaxEntries: 0, // Not supported in newer MongoDB versions
       // bufferCommands: false, // Enable buffering for serverless
     };
 

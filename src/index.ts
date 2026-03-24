@@ -25,6 +25,9 @@ import uploadRoutes from './routes/upload';
 
 const app = express();
 
+// Trust proxy for Vercel deployment
+app.set('trust proxy', true);
+
 // Initialize application
 const startServer = async () => {
   try {
