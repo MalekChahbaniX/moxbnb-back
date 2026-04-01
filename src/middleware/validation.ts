@@ -3,8 +3,8 @@ import Joi from 'joi';
 import { AuthenticatedRequest } from './auth';
 
 export const validateRequest = (schema: Joi.ObjectSchema) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const { error } = schema.validate(req.body);
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    const { error } = schema.validate((req as any).body);
 
     if (error) {
       const errorMessage = error.details.map(detail => detail.message).join(', ');
@@ -101,7 +101,7 @@ export const validateAuthenticatedRequest = (schema: Joi.ObjectSchema) => {
       return;
     }
 
-    const { error } = schema.validate(req.body);
+    const { error } = schema.validate((req as any).body);
 
     if (error) {
       const errorMessage = error.details.map(detail => detail.message).join(', ');

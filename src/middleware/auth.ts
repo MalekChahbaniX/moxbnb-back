@@ -13,7 +13,7 @@ export const authMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const token = (req as any).header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
       res.status(401).json({
@@ -91,7 +91,7 @@ export const ownershipMiddleware = (resourceField: string = 'userId') => {
       return;
     }
 
-    const resourceUserId = req.body[resourceField] || req.params[resourceField];
+    const resourceUserId = (req as any).body[resourceField] || (req as any).params[resourceField];
     
     if (resourceUserId && resourceUserId !== req.user.id) {
       res.status(403).json({
