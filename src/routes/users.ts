@@ -1,8 +1,10 @@
 import { Router } from 'express';
+import { authMiddleware, roleMiddleware } from '../middleware/auth';
+import { userController } from '../controllers/userController';
 
 const router = Router();
 
-// TODO: Implement user routes
-router.get('/', (req, res) => res.json({ message: 'Users route - TODO' }));
+router.get('/', authMiddleware, roleMiddleware(['ADMIN']), userController.getUsers);
+router.get('/:id', userController.getUserById);
 
 export default router;

@@ -1,8 +1,9 @@
 import { Router } from 'express';
+import { serviceController } from '../controllers/serviceController';
 
 const router = Router();
 
-// TODO: Implement services routes
-router.get('/', (req, res) => res.json({ message: 'services route - TODO' }));
+router.get('/', serviceController.getServices);
+router.get('/:id', serviceController.getServiceById);
 
 export default router;

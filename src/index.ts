@@ -124,7 +124,7 @@ const startServer = async () => {
     app.use(notFound);
     app.use(errorHandler);
 
-    const PORT = config.port || 3000;
+    const PORT = config.port;
 
     const server = app.listen(PORT, () => {
       logger.info(`🚀 Server running on port ${PORT}`);

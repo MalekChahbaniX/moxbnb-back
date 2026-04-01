@@ -115,6 +115,10 @@ const config: Config = {
   
   cors: {
     allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || [
+      'http://localhost:3000',
+      'http://localhost:3010',
+      'http://localhost:3002',
+      'http://localhost:3003',
       'http://localhost:3001',
       'http://localhost:19006',
       'https://moxbnb.com',

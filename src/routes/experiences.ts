@@ -1,8 +1,9 @@
 import { Router } from 'express';
+import { experienceController } from '../controllers/experienceController';
 
 const router = Router();
 
-// TODO: Implement experiences routes
-router.get('/', (req, res) => res.json({ message: 'experiences route - TODO' }));
+router.get('/', experienceController.getExperiences);
+router.get('/:id', experienceController.getExperienceById);
 
 export default router;
