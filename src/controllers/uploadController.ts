@@ -5,7 +5,7 @@ import fs from 'fs/promises';
 
 // Configure local storage
 const storage = multer.diskStorage({
-  destination: async (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
+  destination: async (req: Request, file: any, cb: (error: Error | null, destination: string) => void) => {
     const uploadDir = path.join(process.cwd(), 'uploads');
     
     try {
@@ -16,7 +16,7 @@ const storage = multer.diskStorage({
     
     cb(null, uploadDir);
   },
-  filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
+  filename: (req: Request, file: any, cb: (error: Error | null, filename: string) => void) => {
     const timestamp = Date.now();
     const originalName = file.originalname.split('.')[0];
     const extension = path.extname(file.originalname);
@@ -31,7 +31,7 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB
     files: 5, // Maximum 5 files
   },
-  fileFilter: (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  fileFilter: (req: Request, file: any, cb: multer.FileFilterCallback) => {
     const allowedMimes = [
       'image/jpeg',
       'image/jpg',
@@ -141,7 +141,7 @@ export const uploadController = {
           });
         }
 
-        const files = req.files as Express.Multer.File[];
+        const files = req.files as any[];
         
         if (!files || files.length === 0) {
           return res.status(400).json({
@@ -152,7 +152,7 @@ export const uploadController = {
 
         try {
           const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
-          const uploadedFiles = files.map((file: Express.Multer.File) => ({
+          const uploadedFiles = files.map((file: any) => ({
             url: `${baseUrl}/uploads/${file.filename}`,
             filename: file.filename,
             originalName: file.originalname,
