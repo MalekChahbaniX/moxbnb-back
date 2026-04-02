@@ -140,7 +140,16 @@ export const createReviewSchema = Joi.object({
   }),
   comment: Joi.string().max(1000).optional(),
   images: Joi.array().items(Joi.string().uri()).optional(),
+  listingId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+  experienceId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+  serviceId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
   bookingId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required()
+});
+
+export const updateReviewSchema = Joi.object({
+  rating: Joi.number().integer().min(1).max(5).optional(),
+  comment: Joi.string().max(1000).optional(),
+  images: Joi.array().items(Joi.string().uri()).optional()
 });
 
 // Message validation schemas
@@ -191,4 +200,47 @@ export const createServiceSchema = Joi.object({
   latitude: Joi.number().min(-90).max(90).optional(),
   longitude: Joi.number().min(-180).max(180).optional(),
   images: Joi.array().items(Joi.string().uri()).min(1).required()
+});
+
+// Payment validation schemas
+export const createPaymentIntentSchema = Joi.object({
+  bookingId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required().messages({
+    'string.pattern.base': 'Invalid booking ID format',
+    'any.required': 'Booking ID is required'
+  }),
+  amount: Joi.number().min(0.01).required().messages({
+    'number.min': 'Amount must be greater than 0',
+    'any.required': 'Amount is required'
+  }),
+  currency: Joi.string().valid('usd', 'eur', 'tnd').default('usd')
+});
+
+export const confirmPaymentSchema = Joi.object({
+  paymentIntentId: Joi.string().required().messages({
+    'any.required': 'Payment intent ID is required'
+  })
+});
+
+export const refundPaymentSchema = Joi.object({
+  bookingId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required().messages({
+    'string.pattern.base': 'Invalid booking ID format',
+    'any.required': 'Booking ID is required'
+  }),
+  reason: Joi.string().max(500).optional()
+});
+
+// Notification validation schemas
+export const markNotificationsReadSchema = Joi.object({
+  notificationIds: Joi.array().items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/)).optional()
+});
+
+export const deleteNotificationsSchema = Joi.object({
+  notificationIds: Joi.array().items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/)).optional()
+});
+
+// Upload validation schemas
+export const deleteFileSchema = Joi.object({
+  filename: Joi.string().required().messages({
+    'any.required': 'Filename is required'
+  })
 });
