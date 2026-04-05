@@ -33,6 +33,9 @@ export interface AuthenticatedRequest extends Request {
     email: string;
     role: string;
   };
+  query: any;
+  body: any;
+  params: any;
 }
 
 export interface FileUpload {
