@@ -5,6 +5,9 @@ import { User } from '../models';
 
 export interface AuthenticatedRequest extends Request {
   user?: any;
+  query: any;
+  body: any;
+  params: any;
 }
 
 export const authMiddleware = async (
