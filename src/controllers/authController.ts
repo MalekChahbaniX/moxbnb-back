@@ -7,7 +7,7 @@ import { ApiResponse } from '../types';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, firstName, lastName, phone, role = 'GUEST' } = req.body;
+    const { email, password, firstName, lastName, phone, role = 'CLIENT' } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });

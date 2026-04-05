@@ -23,6 +23,9 @@ import messageRoutes from './routes/messages';
 import notificationRoutes from './routes/notifications';
 import paymentRoutes from './routes/payments';
 import uploadRoutes from './routes/upload';
+import favoritesRoutes from './routes/favorites';
+import supportRoutes from './routes/support';
+import providerRoutes from './routes/provider';
 
 const app = express();
 
@@ -99,6 +102,9 @@ const startServer = async () => {
     app.use('/api/notifications', notificationRoutes);
     app.use('/api/payments', paymentRoutes);
     app.use('/api/upload', uploadRoutes);
+    app.use('/api/favorites', favoritesRoutes);
+    app.use('/api/support', supportRoutes);
+    app.use('/api/provider', providerRoutes);
 
     // API documentation endpoint
     app.get('/api', (req, res) => {
@@ -119,6 +125,9 @@ const startServer = async () => {
           notifications: '/api/notifications',
           payments: '/api/payments',
           upload: '/api/upload',
+          favorites: '/api/favorites',
+          support: '/api/support',
+          provider: '/api/provider',
         },
         documentation: '/api/docs',
       });

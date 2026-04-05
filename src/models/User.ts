@@ -8,12 +8,42 @@ export interface IUser extends Document {
   lastName: string;
   phone?: string;
   avatar?: string;
-  role: 'GUEST' | 'HOST' | 'PROVIDER' | 'ADMIN';
+  role: 'GUEST' | 'CLIENT' | 'HOST' | 'PROVIDER' | 'ADMIN';
   isVerified: boolean;
   isActive: boolean;
   language: string;
   currency: string;
   timezone: string;
+  dateOfBirth?: Date;
+  nationality?: string;
+  bio?: string;
+  emergencyContact?: string;
+  settings?: {
+    language?: string;
+    currency?: string;
+    theme?: 'light' | 'dark' | 'auto';
+    autoPlayVideos?: boolean;
+    profileVisibility?: 'public' | 'private';
+    showOnlineStatus?: boolean;
+    allowDirectMessages?: boolean;
+    dataSharing?: boolean;
+    pushNotifications?: boolean;
+    emailNotifications?: boolean;
+    smsNotifications?: boolean;
+    bookingUpdates?: boolean;
+    newMessages?: boolean;
+    promotions?: boolean;
+    twoFactorAuth?: boolean;
+    loginAlerts?: boolean;
+    sessionTimeout?: boolean;
+  };
+  favorites?: Array<{
+    _id?: string;
+    type: string;
+    itemId: string;
+    addedAt: Date;
+  }>;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -57,8 +87,8 @@ const userSchema = new Schema<IUser>({
   },
   role: {
     type: String,
-    enum: ['GUEST', 'HOST', 'PROVIDER', 'ADMIN'],
-    default: 'GUEST'
+    enum: ['GUEST', 'CLIENT', 'HOST', 'PROVIDER', 'ADMIN'],
+    default: 'CLIENT'
   },
   isVerified: {
     type: Boolean,
@@ -81,6 +111,51 @@ const userSchema = new Schema<IUser>({
   timezone: {
     type: String,
     default: 'Africa/Tunis'
+  },
+  dateOfBirth: {
+    type: Date,
+    default: null
+  },
+  nationality: {
+    type: String,
+    default: null
+  },
+  bio: {
+    type: String,
+    maxlength: 500,
+    default: null
+  },
+  emergencyContact: {
+    type: String,
+    default: null
+  },
+  settings: {
+    language: { type: String, default: 'fr' },
+    currency: { type: String, default: 'TND' },
+    theme: { type: String, enum: ['light', 'dark', 'auto'], default: 'light' },
+    autoPlayVideos: { type: Boolean, default: false },
+    profileVisibility: { type: String, enum: ['public', 'private'], default: 'public' },
+    showOnlineStatus: { type: Boolean, default: true },
+    allowDirectMessages: { type: Boolean, default: true },
+    dataSharing: { type: Boolean, default: false },
+    pushNotifications: { type: Boolean, default: true },
+    emailNotifications: { type: Boolean, default: true },
+    smsNotifications: { type: Boolean, default: false },
+    bookingUpdates: { type: Boolean, default: true },
+    newMessages: { type: Boolean, default: true },
+    promotions: { type: Boolean, default: false },
+    twoFactorAuth: { type: Boolean, default: false },
+    loginAlerts: { type: Boolean, default: true },
+    sessionTimeout: { type: Boolean, default: true }
+  },
+  favorites: [{
+    type: { type: String, required: true },
+    itemId: { type: Schema.Types.ObjectId, required: true },
+    addedAt: { type: Date, default: Date.now() }
+  }],
+  deletedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true,

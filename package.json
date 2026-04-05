@@ -13,7 +13,9 @@
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "seed": "ts-node -r tsconfig-paths/register scripts/seed-mongodb-simple.ts"
+    "seed": "ts-node -r tsconfig-paths/register scripts/seed-mongodb-simple.ts",
+    "seed:admin": "ts-node -r tsconfig-paths/register scripts/seed-admin-accounts.ts",
+    "seed:admin:force": "ts-node -r tsconfig-paths/register scripts/seed-admin-accounts.ts --force-delete"
   },
   "engines": {
     "node": "24.x",

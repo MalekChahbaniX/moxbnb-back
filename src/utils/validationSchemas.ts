@@ -23,7 +23,7 @@ export const registerSchema = Joi.object({
   phone: Joi.string().pattern(/^[+]?[\d\s-()]+$/).optional().messages({
     'string.pattern.base': 'Please provide a valid phone number'
   }),
-  role: Joi.string().valid('GUEST', 'HOST', 'PROVIDER').default('GUEST'),
+  role: Joi.string().valid('GUEST', 'CLIENT', 'HOST', 'PROVIDER', 'ADMIN').default('CLIENT'),
   language: Joi.string().valid('fr', 'ar', 'en').default('fr'),
   currency: Joi.string().valid('TND', 'EUR', 'USD').default('TND')
 });
