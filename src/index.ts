@@ -10,6 +10,7 @@ import { connectDB } from './config/database';
 import { logger } from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
+import { keepAliveService } from './services/keepAlive';
 
 // Routes
 import authRoutes from './routes/auth';
@@ -151,6 +152,11 @@ const startServer = async () => {
       logger.info(`🗄️ Database: MongoDB`);
       logger.info(`🔗 API Base URL: http://localhost:${PORT}/api`);
     });
+
+    // Start keep-alive service to prevent Render from spinning down
+    if (config.env === 'production') {
+      keepAliveService.start();
+    }
 
     // Graceful shutdown
     process.on('SIGTERM', () => {

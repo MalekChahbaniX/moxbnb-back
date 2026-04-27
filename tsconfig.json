@@ -24,8 +24,7 @@
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "noEmitOnError": false,
-    "ignoreDeprecations": "6.0"
+    "noEmitOnError": false
   },
   "include": [
     "src/**/*"
