@@ -38,6 +38,22 @@ interface Config {
     publishableKey: string;
     webhookSecret: string;
   };
+  konnect: {
+    apiKey: string;
+    baseUrl: string;
+  };
+  flouci: {
+    apiKey: string;
+    baseUrl: string;
+  };
+  clicktopay: {
+    apiKey: string;
+    merchantId: string;
+    baseUrl: string;
+  };
+  frontend: {
+    url: string;
+  };
   upload: {
     maxFileSize: number;
     path: string;
@@ -101,6 +117,26 @@ const config: Config = {
     secretKey: process.env.STRIPE_SECRET_KEY || '',
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+  },
+  
+  konnect: {
+    apiKey: process.env.KONNECT_API_KEY || '',
+    baseUrl: process.env.KONNECT_BASE_URL || 'https://api.konnect.tn',
+  },
+  
+  flouci: {
+    apiKey: process.env.FLOUCI_API_KEY || '',
+    baseUrl: process.env.FLOUCI_BASE_URL || 'https://api.flouci.com',
+  },
+  
+  clicktopay: {
+    apiKey: process.env.CLICKTOPAY_API_KEY || '',
+    merchantId: process.env.CLICKTOPAY_MERCHANT_ID || '',
+    baseUrl: process.env.CLICKTOPAY_BASE_URL || 'https://api.clicktopay.tn',
+  },
+  
+  frontend: {
+    url: process.env.FRONTEND_URL || 'http://localhost:3000',
   },
   
   upload: {

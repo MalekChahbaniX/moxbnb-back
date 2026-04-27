@@ -18,6 +18,16 @@ export interface IUser extends Document {
   nationality?: string;
   bio?: string;
   emergencyContact?: string;
+  // Provider specific fields
+  serviceTypes?: string[];
+  companyName?: string;
+  specialization?: string;
+  experience?: string;
+  // Host specific fields
+  propertyTypes?: string[];
+  address?: string;
+  city?: string;
+  description?: string;
   settings?: {
     language?: string;
     currency?: string;
@@ -127,6 +137,46 @@ const userSchema = new Schema<IUser>({
   },
   emergencyContact: {
     type: String,
+    default: null
+  },
+  // Provider specific fields
+  serviceTypes: {
+    type: [String],
+    default: []
+  },
+  companyName: {
+    type: String,
+    maxlength: 200,
+    default: null
+  },
+  specialization: {
+    type: String,
+    maxlength: 200,
+    default: null
+  },
+  experience: {
+    type: String,
+    maxlength: 2000,
+    default: null
+  },
+  // Host specific fields
+  propertyTypes: {
+    type: [String],
+    default: []
+  },
+  address: {
+    type: String,
+    maxlength: 500,
+    default: null
+  },
+  city: {
+    type: String,
+    maxlength: 100,
+    default: null
+  },
+  description: {
+    type: String,
+    maxlength: 2000,
     default: null
   },
   settings: {

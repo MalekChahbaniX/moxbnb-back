@@ -1,26 +1,46 @@
 import { Request, Response } from 'express';
-import Stripe from 'stripe';
 import { Booking } from '../models/Booking';
 import { User } from '../models/User';
 import { notificationController } from './notificationController';
-
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16',
-});
+import { paymentService, PaymentProvider } from '../services/paymentService';
 
 export const paymentController = {
+  // Get available payment providers
+  getAvailableProviders: async (req: Request, res: Response) => {
+    try {
+      const providers = paymentService.getAvailableProviders();
+      res.json({
+        success: true,
+        data: providers,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to fetch payment providers',
+      });
+    }
+  },
+
   // Create payment intent
   createPaymentIntent: async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user?.id;
-      const { bookingId, amount, currency = 'usd' } = req.body;
+      const { bookingId, amount, currency = 'tnd', provider = 'STRIPE', returnUrl, cancelUrl } = req.body;
 
       // Validate required fields
       if (!bookingId || !amount) {
         return res.status(400).json({
           success: false,
           error: 'Booking ID and amount are required',
+        });
+      }
+
+      // Validate provider
+      const validProviders: PaymentProvider[] = ['STRIPE', 'KONNECT', 'FLOUCI', 'CLICKTOPAY'];
+      if (!validProviders.includes(provider)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid payment provider',
         });
       }
 
@@ -48,30 +68,36 @@ export const paymentController = {
         });
       }
 
-      // Create Stripe payment intent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
+      // Create payment intent using the selected provider
+      const paymentIntent = await paymentService.createPaymentIntent({
+        amount,
         currency,
-        metadata: {
-          bookingId: bookingId.toString(),
-          userId: userId,
-        },
-        automatic_payment_methods: {
-          enabled: true,
-        },
+        bookingId: bookingId.toString(),
+        userId,
+        provider,
+        returnUrl,
+        cancelUrl,
       });
+
+      // Store payment provider in booking
+      booking.paymentProvider = provider;
+      booking.paymentIntentId = paymentIntent.id;
+      await booking.save();
 
       res.status(201).json({
         success: true,
         data: {
-          clientSecret: paymentIntent.client_secret,
           paymentIntentId: paymentIntent.id,
           amount: paymentIntent.amount,
           currency: paymentIntent.currency,
+          status: paymentIntent.status,
+          clientSecret: paymentIntent.clientSecret,
+          paymentUrl: paymentIntent.paymentUrl,
+          provider,
         },
       });
     } catch (error: any) {
-      console.error('Stripe error:', error);
+      console.error('Payment intent error:', error);
       res.status(500).json({
         success: false,
         error: error.message || 'Failed to create payment intent',
@@ -83,7 +109,7 @@ export const paymentController = {
   confirmPayment: async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user?.id;
-      const { paymentIntentId } = req.body;
+      const { paymentIntentId, provider = 'STRIPE' } = req.body;
 
       if (!paymentIntentId) {
         return res.status(400).json({
@@ -92,20 +118,14 @@ export const paymentController = {
         });
       }
 
-      // Retrieve payment intent from Stripe
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      // Confirm payment using the service
+      const paymentIntent = await paymentService.confirmPayment({
+        paymentIntentId,
+        provider,
+      });
 
-      // Verify payment intent belongs to user
-      if (paymentIntent.metadata.userId !== userId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Unauthorized payment intent',
-        });
-      }
-
-      // Update booking payment status
-      const bookingId = paymentIntent.metadata.bookingId;
-      const booking = await Booking.findById(bookingId);
+      // Find booking by payment intent ID
+      const booking = await Booking.findOne({ paymentIntentId });
 
       if (!booking) {
         return res.status(404).json({
@@ -114,7 +134,16 @@ export const paymentController = {
         });
       }
 
-      if (paymentIntent.status === 'succeeded') {
+      // Verify booking belongs to user
+      if (booking.userId.toString() !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized to confirm this payment',
+        });
+      }
+
+      // Update booking payment status based on payment intent status
+      if (paymentIntent.status === 'succeeded' || paymentIntent.status === 'COMPLETED' || paymentIntent.status === 'PAID') {
         booking.paymentStatus = 'COMPLETED';
         booking.status = 'CONFIRMED';
         await booking.save();
@@ -123,9 +152,9 @@ export const paymentController = {
         await notificationController.createNotification(
           userId,
           'Payment Successful',
-          `Payment of $${paymentIntent.amount / 100} for booking ${bookingId} was successful.`,
+          `Payment of ${paymentIntent.amount} ${paymentIntent.currency.toUpperCase()} for booking ${booking._id} was successful.`,
           'PAYMENT_SUCCESS',
-          { bookingId, paymentIntentId }
+          { bookingId: booking._id, paymentIntentId }
         );
 
         res.json({
@@ -185,6 +214,7 @@ export const paymentController = {
         paymentDate: booking.updatedAt,
         bookingDate: booking.createdAt,
         bookingStatus: booking.status,
+        paymentProvider: booking.paymentProvider,
       }));
 
       res.json({
@@ -242,6 +272,8 @@ export const paymentController = {
           currency: booking.currency,
           paymentStatus: booking.paymentStatus,
           bookingStatus: booking.status,
+          paymentProvider: booking.paymentProvider,
+          paymentIntentId: booking.paymentIntentId,
           createdAt: booking.createdAt,
           updatedAt: booking.updatedAt,
         },
@@ -258,7 +290,7 @@ export const paymentController = {
   processRefund: async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user?.id;
-      const { bookingId, reason } = req.body;
+      const { bookingId, reason, provider } = req.body;
 
       // Check if user is admin
       const user = await User.findById(userId);
@@ -284,8 +316,15 @@ export const paymentController = {
         });
       }
 
-      // In a real implementation, you would process the refund through Stripe
-      // For now, we'll just update the booking status
+      // Process refund through the payment service
+      const paymentProvider = provider || booking.paymentProvider || 'STRIPE';
+      const refundResult = await paymentService.processRefund(
+        booking.paymentIntentId || bookingId.toString(),
+        paymentProvider,
+        booking.totalPrice
+      );
+
+      // Update booking status
       booking.paymentStatus = 'REFUNDED';
       booking.status = 'CANCELLED';
       await booking.save();
@@ -305,6 +344,7 @@ export const paymentController = {
           bookingId: booking._id,
           refundStatus: 'processed',
           refundAmount: booking.totalPrice,
+          refundResult,
         },
         message: 'Refund processed successfully',
       });
@@ -316,37 +356,55 @@ export const paymentController = {
     }
   },
 
-  // Webhook handler for Stripe events
+  // Webhook handler for payment providers
   handleWebhook: async (req: Request, res: Response) => {
     try {
+      const { provider } = req.params;
       const sig = req.headers['stripe-signature'] as string;
-      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-      if (!sig || !webhookSecret) {
-        return res.status(400).json({
-          success: false,
-          error: 'Webhook signature missing',
+      // Handle Stripe webhooks
+      if (provider === 'stripe' && sig) {
+        const Stripe = require('stripe');
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+          apiVersion: '2023-10-16',
         });
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+        if (!webhookSecret) {
+          return res.status(400).json({
+            success: false,
+            error: 'Webhook secret missing',
+          });
+        }
+
+        const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+
+        switch (event.type) {
+          case 'payment_intent.succeeded':
+            const paymentIntent = event.data.object as any;
+            console.log('Stripe payment succeeded:', paymentIntent.id);
+            // Update booking status
+            const booking = await Booking.findOne({ paymentIntentId: paymentIntent.id });
+            if (booking) {
+              booking.paymentStatus = 'COMPLETED';
+              booking.status = 'CONFIRMED';
+              await booking.save();
+            }
+            break;
+
+          case 'payment_intent.payment_failed':
+            const failedPayment = event.data.object as any;
+            console.log('Stripe payment failed:', failedPayment.id);
+            break;
+
+          default:
+            console.log(`Unhandled Stripe event type: ${event.type}`);
+        }
       }
 
-      const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-
-      switch (event.type) {
-        case 'payment_intent.succeeded':
-          const paymentIntent = event.data.object as Stripe.PaymentIntent;
-          // Handle successful payment
-          console.log('Payment succeeded:', paymentIntent.id);
-          break;
-
-        case 'payment_intent.payment_failed':
-          const failedPayment = event.data.object as Stripe.PaymentIntent;
-          // Handle failed payment
-          console.log('Payment failed:', failedPayment.id);
-          break;
-
-        default:
-          console.log(`Unhandled event type: ${event.type}`);
-      }
+      // Handle other provider webhooks (Konnect, Flouci, Clicktopay)
+      // This would be implemented based on each provider's webhook specification
+      console.log(`Webhook received from ${provider}`);
 
       res.json({ received: true });
     } catch (error: any) {

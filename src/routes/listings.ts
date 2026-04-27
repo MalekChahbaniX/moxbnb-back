@@ -10,7 +10,9 @@ const router = Router();
 // Public routes
 router.get('/', validateQuery(commonSchemas.pagination), listingController.getListings);
 router.get('/featured', listingController.getFeaturedListings);
+router.get('/students', validateQuery(commonSchemas.pagination), listingController.getStudentListings);
 router.get('/search', validateQuery(commonSchemas.search), listingController.searchListings);
+router.get('/my', authMiddleware, roleMiddleware(['HOST', 'ADMIN']), listingController.getMyListings);
 router.get('/:id', listingController.getListingById);
 
 // Protected routes (hosts only)

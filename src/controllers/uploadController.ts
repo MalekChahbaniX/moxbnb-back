@@ -85,7 +85,7 @@ export const uploadController = {
 
         try {
           // Create public URL (in production, this would be your domain)
-          const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+          const baseUrl = process.env.FRONTEND_URL;
           const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
           
           res.status(201).json({
@@ -151,7 +151,7 @@ export const uploadController = {
         }
 
         try {
-          const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+          const baseUrl = process.env.FRONTEND_URL;
           const uploadedFiles = files.map((file: any) => ({
             url: `${baseUrl}/uploads/${file.filename}`,
             filename: file.filename,
@@ -237,7 +237,7 @@ export const uploadController = {
       
       try {
         const stats = await fs.stat(filePath);
-        const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+        const baseUrl = process.env.FRONTEND_URL;
         
         res.json({
           success: true,

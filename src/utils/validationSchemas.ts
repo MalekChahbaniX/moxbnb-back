@@ -25,7 +25,17 @@ export const registerSchema = Joi.object({
   }),
   role: Joi.string().valid('GUEST', 'CLIENT', 'HOST', 'PROVIDER', 'ADMIN').default('CLIENT'),
   language: Joi.string().valid('fr', 'ar', 'en').default('fr'),
-  currency: Joi.string().valid('TND', 'EUR', 'USD').default('TND')
+  currency: Joi.string().valid('TND', 'EUR', 'USD').default('TND'),
+  // Provider specific fields
+  serviceTypes: Joi.array().items(Joi.string()).optional(),
+  companyName: Joi.string().max(200).optional(),
+  specialization: Joi.string().max(200).optional(),
+  experience: Joi.string().max(2000).optional(),
+  // Host specific fields
+  propertyTypes: Joi.array().items(Joi.string()).optional(),
+  address: Joi.string().max(500).optional(),
+  city: Joi.string().max(100).optional(),
+  description: Joi.string().max(2000).optional()
 });
 
 export const loginSchema = Joi.object({
@@ -88,7 +98,8 @@ export const createListingSchema = Joi.object({
   bathrooms: Joi.number().integer().min(0).max(20).optional(),
   maxGuests: Joi.number().integer().min(1).max(50).required(),
   size: Joi.number().min(0).optional(),
-  rules: Joi.array().items(Joi.string()).default([])
+  rules: Joi.array().items(Joi.string()).default([]),
+  status: Joi.string().valid('DRAFT', 'PUBLISHED', 'RENTED', 'SUSPENDED', 'ARCHIVED').default('DRAFT')
 });
 
 export const updateListingSchema = Joi.object({

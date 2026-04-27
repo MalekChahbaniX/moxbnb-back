@@ -6,7 +6,7 @@ const router = Router();
 
 // All provider routes require authentication and provider role
 router.use(authMiddleware);
-router.use(roleMiddleware(['PROVIDER', 'ADMIN']));
+router.use(roleMiddleware(['HOST', 'PROVIDER', 'ADMIN']));
 
 // Dashboard and analytics
 router.get('/dashboard', providerController.getProviderDashboard);
@@ -21,5 +21,8 @@ router.get('/services', providerController.getProviderServices);
 
 // Reviews
 router.get('/reviews', providerController.getProviderReviews);
+
+// Clients (guests who booked host listings)
+router.get('/clients', providerController.getProviderClients);
 
 export default router;

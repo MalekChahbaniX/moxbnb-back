@@ -7,7 +7,24 @@ import { ApiResponse } from '../types';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, firstName, lastName, phone, role = 'CLIENT' } = req.body;
+    const { 
+      email, 
+      password, 
+      firstName, 
+      lastName, 
+      phone, 
+      role = 'CLIENT',
+      // Provider specific fields
+      serviceTypes,
+      companyName,
+      specialization,
+      experience,
+      // Host specific fields
+      propertyTypes,
+      address,
+      city,
+      description
+    } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -19,15 +36,29 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Create new user
-    const user = new User({
+    // Create new user with all fields
+    const userData: any = {
       email,
       password,
       firstName,
       lastName,
       phone,
       role
-    });
+    };
+
+    // Add provider specific fields if present
+    if (serviceTypes) userData.serviceTypes = serviceTypes;
+    if (companyName) userData.companyName = companyName;
+    if (specialization) userData.specialization = specialization;
+    if (experience) userData.experience = experience;
+
+    // Add host specific fields if present
+    if (propertyTypes) userData.propertyTypes = propertyTypes;
+    if (address) userData.address = address;
+    if (city) userData.city = city;
+    if (description) userData.description = description;
+
+    const user = new User(userData);
 
     await user.save();
 

@@ -15,7 +15,9 @@ export const getListings = async (req: Request, res: Response): Promise<void> =>
       minPrice,
       maxPrice,
       rating,
-      city
+      city,
+      pricingType,
+      targetAudience
     } = req.query as QueryParams;
 
     // Build query
@@ -35,6 +37,14 @@ export const getListings = async (req: Request, res: Response): Promise<void> =>
 
     if (city) {
       query.city = { $regex: city, $options: 'i' };
+    }
+
+    if (pricingType) {
+      query.pricingType = pricingType;
+    }
+
+    if (targetAudience) {
+      query.targetAudience = targetAudience;
     }
 
     if (minPrice || maxPrice) {
@@ -140,6 +150,88 @@ export const searchListings = async (req: Request, res: Response): Promise<void>
     res.status(500).json({
       success: false,
       error: error.message || 'Server error searching listings'
+    } as ApiResponse);
+  }
+};
+
+export const getMyListings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user.id;
+    const { status, search, page = 1, limit = 24 } = req.query;
+
+    const query: Record<string, unknown> = { hostId: userId };
+
+    if (status && status !== 'all') {
+      if (status === 'active') query.status = 'PUBLISHED';
+      else if (status === 'inactive') query.status = { $in: ['SUSPENDED', 'ARCHIVED', 'RENTED'] };
+      else if (status === 'pending') query.status = 'DRAFT';
+    }
+
+    if (search && typeof search === 'string' && search.trim()) {
+      const esc = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(esc, 'i');
+      query.$or = [{ title: re }, { city: re }];
+    }
+
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, Number(limit) || 24));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [listings, total] = await Promise.all([
+      Listing.find(query).sort({ updatedAt: -1 }).skip(skip).limit(limitNum).lean(),
+      Listing.countDocuments(query)
+    ]);
+
+    const ids = listings.map((l) => l._id);
+    const [bookingStats, reviewStats] = await Promise.all([
+      ids.length
+        ? Booking.aggregate([
+            { $match: { listingId: { $in: ids } } },
+            { $group: { _id: '$listingId', bookings: { $sum: 1 }, revenue: { $sum: '$totalPrice' } } }
+          ])
+        : Promise.resolve([] as { _id: unknown; bookings: number; revenue: number }[]),
+      ids.length
+        ? Review.aggregate([
+            { $match: { listingId: { $in: ids } } },
+            { $group: { _id: '$listingId', avgRating: { $avg: '$rating' }, reviews: { $sum: 1 } } }
+          ])
+        : Promise.resolve([] as { _id: unknown; avgRating: number; reviews: number }[])
+    ]);
+
+    const bMap = Object.fromEntries(bookingStats.map((b) => [String(b._id), b]));
+    const rMap = Object.fromEntries(reviewStats.map((r) => [String(r._id), r]));
+
+    const data = listings.map((l) => {
+      const id = String(l._id);
+      const bs = bMap[id] || { bookings: 0, revenue: 0 };
+      const rs = rMap[id] || { avgRating: 0, reviews: 0 };
+      return {
+        ...l,
+        stats: {
+          bookings: bs.bookings,
+          revenue: bs.revenue || 0,
+          rating: rs.avgRating ? Math.round(rs.avgRating * 10) / 10 : 0,
+          reviews: rs.reviews || 0
+        }
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum) || 1,
+        hasNext: skip + limitNum < total,
+        hasPrev: pageNum > 1
+      }
+    } as ApiResponse);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error fetching your listings'
     } as ApiResponse);
   }
 };
@@ -324,14 +416,84 @@ export const deleteImage = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
+export const getStudentListings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      city,
+      pricingType,
+      bedrooms,
+      maxPrice
+    } = req.query;
+
+    const query: any = {
+      targetAudience: 'STUDENTS',
+      status: 'PUBLISHED'
+    };
+
+    if (city) {
+      query.city = { $regex: city, $options: 'i' };
+    }
+
+    if (pricingType) {
+      query.pricingType = { $in: [pricingType, 'BOTH'] };
+    }
+
+    if (bedrooms) {
+      query.bedrooms = { $gte: Number(bedrooms) };
+    }
+
+    if (maxPrice) {
+      query.$or = [
+        { price: { $lte: Number(maxPrice) } },
+        { monthlyPrice: { $lte: Number(maxPrice) } }
+      ];
+    }
+
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    const listings = await Listing.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .populate('hostId', 'firstName lastName avatar phone')
+      .exec();
+
+    const total = await Listing.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: listings,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+        hasNext: skip + limitNum < total,
+        hasPrev: pageNum > 1
+      }
+    } as ApiResponse);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error fetching student listings'
+    } as ApiResponse);
+  }
+};
+
 export const listingController = {
   getListings,
   getFeaturedListings,
   searchListings,
+  getMyListings,
   getListingById,
   createListing,
   updateListing,
   deleteListing,
   uploadImages,
-  deleteImage
+  deleteImage,
+  getStudentListings
 };

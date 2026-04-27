@@ -3,9 +3,11 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IListing extends Document {
   title: string;
   description: string;
-  type: 'APARTMENT' | 'HOUSE' | 'VILLA' | 'STUDIO' | 'ROOM' | 'CABIN' | 'LOFT' | 'CONDO' | 'TOWNHOUSE';
+  type: 'APARTMENT' | 'HOUSE' | 'VILLA' | 'STUDIO' | 'ROOM' | 'CABIN' | 'LOFT' | 'CONDO' | 'TOWNHOUSE' | 'SHARED_ROOM' | 'SHARED_ROOM_STUDENTS' | 'PRIVATE_ROOM_STUDENTS' | 'ENTIRE_MAISON_STUDENTS';
   category: string;
   price: number;
+  monthlyPrice?: number; // Prix mensuel si applicable
+  pricingType: 'NIGHTLY' | 'MONTHLY' | 'BOTH'; // Type de prix
   currency: string;
   address: string;
   city: string;
@@ -19,6 +21,7 @@ export interface IListing extends Document {
   maxGuests: number;
   size?: number;
   rules: string[];
+  targetAudience?: 'GENERAL' | 'STUDENTS' | 'FAMILIES' | 'PROFESSIONALS'; // Audience cible
   status: 'DRAFT' | 'PUBLISHED' | 'RENTED' | 'SUSPENDED' | 'ARCHIVED';
   isFeatured: boolean;
   hostId: mongoose.Types.ObjectId;
@@ -42,7 +45,7 @@ const listingSchema = new Schema<IListing>({
   type: {
     type: String,
     required: true,
-    enum: ['APARTMENT', 'HOUSE', 'VILLA', 'STUDIO', 'ROOM', 'CABIN', 'LOFT', 'CONDO', 'TOWNHOUSE']
+    enum: ['APARTMENT', 'HOUSE', 'VILLA', 'STUDIO', 'ROOM', 'CABIN', 'LOFT', 'CONDO', 'TOWNHOUSE', 'SHARED_ROOM', 'SHARED_ROOM_STUDENTS', 'PRIVATE_ROOM_STUDENTS', 'ENTIRE_MAISON_STUDENTS']
   },
   category: {
     type: String,
@@ -53,6 +56,15 @@ const listingSchema = new Schema<IListing>({
     type: Number,
     required: true,
     min: 0
+  },
+  monthlyPrice: {
+    type: Number,
+    min: 0
+  },
+  pricingType: {
+    type: String,
+    enum: ['NIGHTLY', 'MONTHLY', 'BOTH'],
+    default: 'NIGHTLY'
   },
   currency: {
     type: String,
@@ -116,6 +128,11 @@ const listingSchema = new Schema<IListing>({
     type: String,
     trim: true
   }],
+  targetAudience: {
+    type: String,
+    enum: ['GENERAL', 'STUDENTS', 'FAMILIES', 'PROFESSIONALS'],
+    default: 'GENERAL'
+  },
   status: {
     type: String,
     enum: ['DRAFT', 'PUBLISHED', 'RENTED', 'SUSPENDED', 'ARCHIVED'],
@@ -139,11 +156,16 @@ listingSchema.index({ title: 'text', description: 'text' });
 listingSchema.index({ city: 1, country: 1 });
 listingSchema.index({ type: 1, category: 1 });
 listingSchema.index({ price: 1 });
+listingSchema.index({ monthlyPrice: 1 });
+listingSchema.index({ pricingType: 1 });
+listingSchema.index({ targetAudience: 1 });
 listingSchema.index({ maxGuests: 1 });
 listingSchema.index({ status: 1 });
 listingSchema.index({ isFeatured: 1 });
 listingSchema.index({ hostId: 1 });
 listingSchema.index({ createdAt: -1 });
 listingSchema.index({ latitude: 1, longitude: 1 });
+listingSchema.index({ pricingType: 1, city: 1 }); // Pour filtrer par type de prix et ville
+listingSchema.index({ targetAudience: 1, status: 1 }); // Pour filtrer par audience cible
 
 export const Listing = mongoose.model<IListing>('Listing', listingSchema);

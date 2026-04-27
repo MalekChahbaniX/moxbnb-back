@@ -8,7 +8,7 @@ Backend API pour la plateforme Moxbnb - Location, expériences et services en Tu
 - **Base de données** : MongoDB avec Mongoose ODM
 - **Authentification** : JWT avec refresh tokens
 - **Upload de fichiers** : Cloudinary
-- **Paiements** : Stripe
+- **Paiements** : Multi-fournisseurs (Stripe, Konnect, Flouci, Clicktopay)
 - **Emails** : Nodemailer
 - **Cache** : Redis
 - **Logging** : Winston
@@ -109,9 +109,13 @@ npm start
 - `DELETE /api/bookings/:id` - Annuler une réservation
 
 #### Paiements
-- `POST /api/payments/create-intent` - Créer une intention de paiement
+- `GET /api/payments/providers` - Liste des fournisseurs de paiement disponibles
+- `POST /api/payments/create-intent` - Créer une intention de paiement (Stripe/Konnect/Flouci/Clicktopay)
 - `POST /api/payments/confirm` - Confirmer un paiement
-- `GET /api/payments/:id` - Détails d'un paiement
+- `GET /api/payments/history` - Historique des paiements
+- `GET /api/payments/booking/:bookingId` - Détails d'un paiement
+- `POST /api/payments/refund` - Remboursement (admin)
+- `POST /api/payments/webhook/:provider` - Webhook pour les fournisseurs
 
 ## 🔧 Scripts Disponibles
 
@@ -132,7 +136,7 @@ npm start
 ### Services
 - **AuthService** : Gestion authentification
 - **EmailService** : Envoi d'emails
-- **PaymentService** : Intégration Stripe
+- **PaymentService** : Intégration multi-fournisseurs (Stripe, Konnect, Flouci, Clicktopay)
 - **UploadService** : Gestion fichiers
 - **CacheService** : Gestion Redis
 
@@ -171,8 +175,20 @@ docker run -p 3000:3000 moxbnb-backend
 Variables requises :
 - `MONGODB_URI`
 - `JWT_SECRET`
-- `STRIPE_SECRET_KEY`
 - `CLOUDINARY_CLOUD_NAME`
+
+Variables de paiement (optionnelles - au moins une requise) :
+- `STRIPE_SECRET_KEY` - Pour Stripe
+- `STRIPE_PUBLISHABLE_KEY` - Pour Stripe
+- `STRIPE_WEBHOOK_SECRET` - Pour Stripe webhooks
+- `KONNECT_API_KEY` - Pour Konnect (Tunisie)
+- `KONNECT_BASE_URL` - URL API Konnect (défaut: https://api.konnect.tn)
+- `FLOUCI_API_KEY` - Pour Flouci (Tunisie)
+- `FLOUCI_BASE_URL` - URL API Flouci (défaut: https://api.flouci.com)
+- `CLICKTOPAY_API_KEY` - Pour Clicktopay (Tunisie)
+- `CLICKTOPAY_MERCHANT_ID` - ID marchand Clicktopay
+- `CLICKTOPAY_BASE_URL` - URL API Clicktopay (défaut: https://api.clicktopay.tn)
+- `FRONTEND_URL` - URL frontend pour les redirections de paiement
 
 ## 🤝 Contribuer
 

@@ -7,10 +7,17 @@ import { createPaymentIntentSchema, confirmPaymentSchema, refundPaymentSchema } 
 
 const router = Router();
 
-// All payment routes require authentication
-router.use(authMiddleware);
+// All payment routes require authentication except webhooks
+router.use((req, res, next) => {
+  if (req.path.includes('/webhook')) {
+    next();
+  } else {
+    authMiddleware(req, res, next);
+  }
+});
 
 // Routes
+router.get('/providers', paymentController.getAvailableProviders);
 router.post('/create-intent', validateRequest(createPaymentIntentSchema), paymentController.createPaymentIntent);
 router.post('/confirm', validateRequest(confirmPaymentSchema), paymentController.confirmPayment);
 router.get('/history', paymentController.getPaymentHistory);
@@ -19,7 +26,7 @@ router.get('/booking/:bookingId', paymentController.getPaymentDetails);
 // Admin only routes
 router.post('/refund', roleMiddleware(['ADMIN']), validateRequest(refundPaymentSchema), paymentController.processRefund);
 
-// Webhook endpoint (no auth required)
-router.post('/webhook', paymentController.handleWebhook);
+// Webhook endpoints (no auth required)
+router.post('/webhook/:provider', paymentController.handleWebhook);
 
 export default router;

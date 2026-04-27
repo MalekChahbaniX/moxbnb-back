@@ -11,6 +11,8 @@ export interface IBooking extends Document {
   specialRequests?: string;
   paymentStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
   paymentId?: string;
+  paymentProvider?: 'STRIPE' | 'KONNECT' | 'FLOUCI' | 'CLICKTOPAY';
+  paymentIntentId?: string;
   userId: mongoose.Types.ObjectId;
   listingId?: mongoose.Types.ObjectId;
   experienceId?: mongoose.Types.ObjectId;
@@ -71,6 +73,14 @@ const bookingSchema = new Schema<IBooking>({
     default: 'PENDING'
   },
   paymentId: {
+    type: String,
+    trim: true
+  },
+  paymentProvider: {
+    type: String,
+    enum: ['STRIPE', 'KONNECT', 'FLOUCI', 'CLICKTOPAY']
+  },
+  paymentIntentId: {
     type: String,
     trim: true
   },

@@ -26,6 +26,8 @@ import uploadRoutes from './routes/upload';
 import favoritesRoutes from './routes/favorites';
 import supportRoutes from './routes/support';
 import providerRoutes from './routes/provider';
+import adminRoutes from './routes/admin';
+import transportationRoutes from './routes/transportation';
 
 const app = express();
 
@@ -105,6 +107,8 @@ const startServer = async () => {
     app.use('/api/favorites', favoritesRoutes);
     app.use('/api/support', supportRoutes);
     app.use('/api/provider', providerRoutes);
+    app.use('/api/admin', adminRoutes);
+    app.use('/api/transportation', transportationRoutes);
 
     // API documentation endpoint
     app.get('/api', (req, res) => {
@@ -127,7 +131,9 @@ const startServer = async () => {
           upload: '/api/upload',
           favorites: '/api/favorites',
           support: '/api/support',
+          admin: '/api/admin',
           provider: '/api/provider',
+          transportation: '/api/transportation',
         },
         documentation: '/api/docs',
       });
