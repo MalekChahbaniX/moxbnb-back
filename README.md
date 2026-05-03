@@ -66,17 +66,7 @@ npm install
 cp .env.example .env
 # Éditez .env avec vos clés API et configurations
 ```
-
-3. **Démarrer les services**
-```bash
-# MongoDB avec Docker (plus simple)
-docker run -d -p 27017:27017 --name mongodb mongo
-
-# Redis avec Docker (optionnel)
-docker run -d -p 6379:6379 --name redis redis
-```
-
-4. **Lancer le serveur**
+3. **Lancer le serveur**
 ```bash
 # Mode développement (avec hot-reload)
 npm run dev
@@ -188,16 +178,6 @@ Pour surveiller et debugger notre backend :
 > **Pour l'équipe** : En cas de problème, vérifiez d'abord les logs Winston !
 
 ## 🚀 Déploiement
-
-### Docker (Recommandé pour la production)
-```bash
-# Build l'image
-docker build -t moxbnb-backend .
-
-# Lance le container
-docker run -p 3000:3000 moxbnb-backend
-```
-
 ### Variables d'environnement (.env)
 
 **Obligatoires** (le backend ne démarre pas sans) :
@@ -262,5 +242,3 @@ MIT License - voir le fichier `LICENSE`
 ---
 
 **Made with ❤️ by the Moxbnb Team**
-
-*Pour toute question technique : contactez l'équipe backend sur Slack*
