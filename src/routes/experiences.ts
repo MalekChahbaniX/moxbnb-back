@@ -8,10 +8,12 @@ const router = Router();
 
 // Public routes
 router.get('/', experienceController.getExperiences);
-router.get('/:id', experienceController.getExperienceById);
 
 // Protected routes (providers only)
 router.get('/my', authMiddleware, roleMiddleware(['PROVIDER', 'ADMIN']), experienceController.getMyExperiences);
+
+// Public routes (must come after /my)
+router.get('/:id', experienceController.getExperienceById);
 router.post('/', authMiddleware, roleMiddleware(['PROVIDER', 'ADMIN']), validateRequest(createExperienceSchema), experienceController.createExperience);
 router.put('/:id', authMiddleware, roleMiddleware(['PROVIDER', 'ADMIN']), validateRequest(createExperienceSchema), experienceController.updateExperience);
 router.delete('/:id', authMiddleware, roleMiddleware(['PROVIDER', 'ADMIN']), experienceController.deleteExperience);

@@ -123,16 +123,64 @@ export const getMyServices = async (req: Request, res: Response): Promise<void> 
 export const createService = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user.id;
-    const serviceData = { ...req.body, providerId: userId };
+    const {
+      title,
+      description,
+      category,
+      price,
+      duration,
+      maxGuests,
+      location,
+      city,
+      country,
+      coordinates,
+      images,
+      requirements,
+      included,
+      notIncluded,
+      instantBook,
+      status = 'DRAFT'
+    } = req.body;
+
+    // Validate required fields
+    if (!title || !description || !category || !price || !duration) {
+      res.status(400).json({
+        success: false,
+        error: 'Missing required fields: title, description, category, price, duration'
+      } as ApiResponse);
+      return;
+    }
+
+    // Prepare service data
+    const serviceData: any = {
+      title,
+      description,
+      category,
+      price: Number(price),
+      duration: Number(duration),
+      location,
+      city,
+      country,
+      latitude: coordinates?.lat,
+      longitude: coordinates?.lng,
+      images: images || [],
+      requirements,
+      included,
+      notIncluded,
+      status: status === 'active' ? 'PUBLISHED' : 'DRAFT',
+      providerId: userId
+    };
 
     const service = new Service(serviceData);
     await service.save();
 
     res.status(201).json({
       success: true,
-      data: service
+      data: service,
+      message: 'Service created successfully'
     } as ApiResponse);
   } catch (error: any) {
+    console.error('Error creating service:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'Server error creating service'

@@ -126,12 +126,13 @@ export const updateListingSchema = Joi.object({
 // Booking validation schemas
 export const createBookingSchema = Joi.object({
   type: Joi.string().valid('PROPERTY', 'EXPERIENCE', 'SERVICE').required(),
-  itemId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required(),
-  checkIn: Joi.date().iso().required().messages({
-    'date.format': 'Check-in date must be in ISO format',
+  listingId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+  experienceId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+  serviceId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+  checkIn: Joi.string().required().messages({
     'any.required': 'Check-in date is required'
   }),
-  checkOut: Joi.date().iso().when('type', {
+  checkOut: Joi.string().when('type', {
     is: 'SERVICE',
     then: Joi.optional(),
     otherwise: Joi.required().messages({
@@ -139,8 +140,15 @@ export const createBookingSchema = Joi.object({
     })
   }),
   guests: Joi.number().integer().min(1).max(50).required(),
+  totalPrice: Joi.number().min(0).required().messages({
+    'number.min': 'Total price must be a positive number',
+    'any.required': 'Total price is required'
+  }),
+  currency: Joi.string().valid('TND', 'EUR', 'USD').default('TND'),
+  paymentStatus: Joi.string().valid('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'REFUNDED', 'PARTIALLY_REFUNDED').default('PENDING'),
+  paymentProvider: Joi.string().valid('STRIPE', 'KONNECT', 'FLOUCI', 'CLICKTOPAY').optional(),
   specialRequests: Joi.string().max(1000).optional()
-});
+}).or('listingId', 'experienceId', 'serviceId');
 
 // Review validation schemas
 export const createReviewSchema = Joi.object({
@@ -193,24 +201,35 @@ export const createExperienceSchema = Joi.object({
   images: Joi.array().items(Joi.string().uri()).min(1).required(),
   includes: Joi.array().items(Joi.string()).default([]),
   requirements: Joi.array().items(Joi.string()).default([]),
-  difficulty: Joi.string().valid('BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT').default('BEGINNER')
+  difficulty: Joi.string().valid('BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT').default('BEGINNER'),
+  status: Joi.string().valid('DRAFT', 'PUBLISHED', 'CANCELLED', 'ARCHIVED').default('DRAFT')
 });
 
 // Service validation schemas
 export const createServiceSchema = Joi.object({
-  title: Joi.string().min(10).max(200).required(),
-  description: Joi.string().min(50).max(2000).required(),
+  title: Joi.string().min(3).max(200).required(),
+  description: Joi.string().min(10).max(2000).required(),
   category: Joi.string().required(),
   price: Joi.number().min(0).required(),
   currency: Joi.string().valid('TND', 'EUR', 'USD').default('TND'),
-  duration: Joi.number().integer().min(30).max(480).required(),
+  duration: Joi.string().required(), // Accept string like "2 hours"
+  maxGuests: Joi.string().optional(),
   location: Joi.string().optional(),
   address: Joi.string().optional(),
   city: Joi.string().optional(),
   country: Joi.string().default('Tunisia'),
   latitude: Joi.number().min(-90).max(90).optional(),
   longitude: Joi.number().min(-180).max(180).optional(),
-  images: Joi.array().items(Joi.string().uri()).min(1).required()
+  coordinates: Joi.object({
+    lat: Joi.number().min(-90).max(90).optional(),
+    lng: Joi.number().min(-180).max(180).optional()
+  }).optional(),
+  images: Joi.array().items(Joi.string().uri()).default([]),
+  requirements: Joi.string().optional(),
+  included: Joi.string().optional(),
+  notIncluded: Joi.string().optional(),
+  instantBook: Joi.boolean().optional(),
+  status: Joi.string().valid('active', 'DRAFT', 'PUBLISHED', 'UNAVAILABLE', 'ARCHIVED').default('DRAFT')
 });
 
 // Payment validation schemas

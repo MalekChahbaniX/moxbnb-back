@@ -15,5 +15,6 @@ router.post('/', validateRequest(createBookingSchema), bookingController.createB
 router.get('/:id', bookingController.getBookingById);
 router.put('/:id', bookingController.updateBooking);
 router.patch('/:id/cancel', bookingController.cancelBooking);
+router.patch('/:id/confirm', bookingController.confirmBooking);
 
 export default router;

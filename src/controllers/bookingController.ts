@@ -167,10 +167,43 @@ export const cancelBooking = async (req: Request, res: Response): Promise<void> 
   }
 };
 
+export const confirmBooking = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user.id;
+
+    const booking = await Booking.findOneAndUpdate(
+      { _id: id, userId },
+      { status: 'CONFIRMED' },
+      { new: true }
+    );
+
+    if (!booking) {
+      res.status(404).json({
+        success: false,
+        error: 'Booking not found or access denied'
+      } as ApiResponse);
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: booking,
+      message: 'Booking confirmed successfully'
+    } as ApiResponse);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error confirming booking'
+    } as ApiResponse);
+  }
+};
+
 export const bookingController = {
   getBookings,
   createBooking,
   getBookingById,
   updateBooking,
-  cancelBooking
+  cancelBooking,
+  confirmBooking
 };

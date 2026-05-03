@@ -1,203 +1,266 @@
-# Moxbnb Backend API
+# Moxbnb Backend API 🏠
 
-Backend API pour la plateforme Moxbnb - Location, expériences et services en Tunisie.
+Bienvenue dans le backend de Moxbnb ! Notre plateforme de location, expériences et services en Tunisie.
 
-## 🚀 Features
+> **Note pour l'équipe** : Ce backend est le cœur de notre application Moxbnb. Il gère tout ce qui concerne la logique métier, les données, et l'intégration avec nos services externes.
 
-- **Architecture Scalable** : Node.js + TypeScript + Express
-- **Base de données** : MongoDB avec Mongoose ODM
-- **Authentification** : JWT avec refresh tokens
-- **Upload de fichiers** : Cloudinary
-- **Paiements** : Multi-fournisseurs (Stripe, Konnect, Flouci, Clicktopay)
-- **Emails** : Nodemailer
-- **Cache** : Redis
-- **Logging** : Winston
-- **Validation** : Joi
-- **Rate Limiting** : Express-rate-limit
-- **Sécurité** : Helmet, CORS, Compression
+## 🎯 Ce que fait notre backend
+
+Notre backend gère :
+- **Gestion des utilisateurs** : Inscription, connexion, profils
+- **Logements** : CRUD complet pour les annonces de location
+- **Expériences** : Activités et services proposés en Tunisie
+- **Réservations** : Gestion complète des bookings
+- **Paiements** : Intégration avec les solutions tunisiennes (Konnect, Flouci, Clicktopay) et internationales (Stripe)
+- **Notifications** : Emails et communications utilisateurs
+
+## 🛠️ Stack Technique
+
+- **Node.js + TypeScript** : Pour un code robuste et typé
+- **Express.js** : Notre framework web principal
+- **MongoDB + Mongoose** : Base de données NoSQL flexible
+- **JWT** : Authentification sécurisée avec refresh tokens
+- **Cloudinary** : Stockage des images et fichiers
+- **Redis** : Cache pour les performances
+- **Winston** : Logging structuré pour le debugging
 
 ## 📁 Structure du Projet
 
 ```
 src/
-├── config/          # Configuration de l'application
-├── controllers/     # Logique métier
-├── middleware/      # Middleware Express
-├── models/          # Modèles Mongoose
-├── routes/          # Routes API
-├── services/        # Services externes
-├── utils/           # Utilitaires
-├── types/           # Types TypeScript
-└── scripts/         # Scripts (seed, migrations)
+├── config/          # Configuration (DB, JWT, Cloudinary, etc.)
+├── controllers/     # Logique métier - C'est ici qu'on traite les requêtes
+├── middleware/      # Middleware Express (Auth, validation, errors)
+├── models/          # Schémas Mongoose pour MongoDB
+├── routes/          # Définition des routes API
+├── services/        # Services externes (Emails, Paiements, Upload)
+├── utils/           # Fonctions utilitaires réutilisables
+├── types/           # Types TypeScript personnalisés
+└── scripts/         # Scripts de seed et migrations
 ```
 
-## 🛠️ Installation
+> **Pour l'équipe** : Quand vous ajoutez une nouvelle feature, suivez cette structure !
+> - **Model** d'abord dans `models/`
+> - **Controller** dans `controllers/`
+> - **Route** dans `routes/`
+> - **Tests** dans `tests/` (si existant)
 
-1. Cloner le projet
+## � Démarrage Rapide (Pour l'équipe)
+
+### Prérequis
+- Node.js 18+ 
+- MongoDB (local ou Docker)
+- Redis (optionnel pour le cache)
+
+### Installation
+
+1. **Cloner et installer**
 ```bash
 git clone <repository-url>
 cd Moxbnb-Backend
-```
-
-2. Installer les dépendances
-```bash
 npm install
 ```
 
-3. Configurer les variables d'environnement
+2. **Configuration**
 ```bash
 cp .env.example .env
-# Éditer .env avec vos configurations
+# Éditez .env avec vos clés API et configurations
 ```
 
-4. Démarrer MongoDB
+3. **Démarrer les services**
 ```bash
-# Avec Docker
+# MongoDB avec Docker (plus simple)
 docker run -d -p 27017:27017 --name mongodb mongo
 
-# Ou installer MongoDB localement
-sudo systemctl start mongod
+# Redis avec Docker (optionnel)
+docker run -d -p 6379:6379 --name redis redis
 ```
 
-5. Démarrer le serveur
+4. **Lancer le serveur**
 ```bash
-# Développement
+# Mode développement (avec hot-reload)
 npm run dev
 
-# Production
+# Mode production
 npm run build
 npm start
 ```
 
-## 📚 Documentation API
+> **Conseil équipe** : Utilisez toujours `npm run dev` pour le développement. Le serveur redémarre automatiquement quand vous modifiez les fichiers !
 
-### Base URL
-- Développement : `http://localhost:3000`
-- Production : `https://api.moxbnb.tn`
+## � API Endpoints (Guide pratique)
 
-### Endpoints Principaux
+### URLs
+- **Développement** : `http://localhost:3000`
+- **Production** : `https://api.moxbnb.tn`
 
-#### Authentification
-- `POST /api/auth/register` - Inscription
-- `POST /api/auth/login` - Connexion
-- `POST /api/auth/logout` - Déconnexion
-- `GET /api/auth/me` - Profil utilisateur
+### Authentification 🔐
+```bash
+POST /api/auth/register    # Créer un compte
+POST /api/auth/login       # Se connecter
+POST /api/auth/logout      # Se déconnecter
+GET  /api/auth/me          # Voir son profil
+```
 
-#### Logements
-- `GET /api/listings` - Liste des logements
-- `GET /api/listings/:id` - Détails d'un logement
-- `POST /api/listings` - Créer un logement
-- `PUT /api/listings/:id` - Modifier un logement
-- `DELETE /api/listings/:id` - Supprimer un logement
+### Logements 🏠
+```bash
+GET    /api/listings           # Tous les logements (avec filtres)
+GET    /api/listings/:id       # Détails d'un logement
+POST   /api/listings           # Ajouter une annonce (auth requis)
+PUT    /api/listings/:id       # Modifier son annonce
+DELETE /api/listings/:id       # Supprimer son annonce
+```
 
-#### Expériences
-- `GET /api/experiences` - Liste des expériences
-- `GET /api/experiences/:id` - Détails d'une expérience
-- `POST /api/experiences` - Créer une expérience
-- `PUT /api/experiences/:id` - Modifier une expérience
+### Réservations 📅
+```bash
+GET    /api/bookings           # Mes réservations (auth requis)
+POST   /api/bookings           # Créer une réservation
+PUT    /api/bookings/:id       # Modifier une réservation
+DELETE /api/bookings/:id       # Annuler une réservation
+```
 
-#### Services
-- `GET /api/services` - Liste des services
-- `GET /api/services/:id` - Détails d'un service
-- `POST /api/services` - Créer un service
-- `PUT /api/services/:id` - Modifier un service
+### Paiements 💳 (Spécial Tunisie !)
+```bash
+GET  /api/payments/providers           # Solutions disponibles
+POST /api/payments/create-intent       # Initier un paiement
+POST /api/payments/confirm             # Confirmer le paiement
+GET  /api/payments/history             # Historique
+POST /api/payments/webhook/:provider   # Webhooks (Konnect, Flouci, etc.)
+```
 
-#### Réservations
-- `GET /api/bookings` - Liste des réservations
-- `POST /api/bookings` - Créer une réservation
-- `PUT /api/bookings/:id` - Modifier une réservation
-- `DELETE /api/bookings/:id` - Annuler une réservation
+> **Note équipe** : Tous les endpoints protégés nécessitent un header `Authorization: Bearer <token>`
 
-#### Paiements
-- `GET /api/payments/providers` - Liste des fournisseurs de paiement disponibles
-- `POST /api/payments/create-intent` - Créer une intention de paiement (Stripe/Konnect/Flouci/Clicktopay)
-- `POST /api/payments/confirm` - Confirmer un paiement
-- `GET /api/payments/history` - Historique des paiements
-- `GET /api/payments/booking/:bookingId` - Détails d'un paiement
-- `POST /api/payments/refund` - Remboursement (admin)
-- `POST /api/payments/webhook/:provider` - Webhook pour les fournisseurs
+## �️ Scripts Utiles (Pour tous les jours)
 
-## 🔧 Scripts Disponibles
+```bash
+npm run dev          # Développement - le plus utilisé !
+npm run build        # Compile le TypeScript
+npm start            # Production
+npm test             # Lancer les tests unitaires
+npm run lint         # Vérifier la qualité du code
+npm run seed         # Remplir la BDD avec des données de test
+npm run migrate      # Lancer les migrations BDD
+```
 
-- `npm run dev` - Démarrer en mode développement
-- `npm run build` - Compiler TypeScript
-- `npm start` - Démarrer en production
-- `npm test` - Lancer les tests
-- `npm run lint` - Linter le code
-- `npm run seed` - Peupler la base de données
+> **Pro tip** : Avant chaque commit, faites `npm run lint` pour éviter les erreurs de code !
 
-## 🏗️ Architecture
+## 🏗️ Comment c'est architecturé ?
 
-### Pattern MVC
-- **Models** : Schémas Mongoose
-- **Views** : Réponses JSON
-- **Controllers** : Logique métier
+### Pattern MVC (Modèle-Vue-Contrôleur)
+- **Models** (`src/models/`) : Schémas de données MongoDB
+- **Controllers** (`src/controllers/`) : Logique métier, traitement des requêtes
+- **Views** : Réponses JSON (pas de templates, c'est une API)
 
-### Services
-- **AuthService** : Gestion authentification
-- **EmailService** : Envoi d'emails
-- **PaymentService** : Intégration multi-fournisseurs (Stripe, Konnect, Flouci, Clicktopay)
-- **UploadService** : Gestion fichiers
-- **CacheService** : Gestion Redis
+### Services (La logique complexe)
+- **AuthService** : Gestion JWT, refresh tokens
+- **EmailService** : Notifications utilisateurs
+- **PaymentService** : Intégration paiements tunisiens + Stripe
+- **UploadService** : Gestion images/fichiers avec Cloudinary
+- **CacheService** : Redis pour les performances
 
-### Middleware
-- **AuthMiddleware** : Vérification JWT
-- **ValidationMiddleware** : Validation Joi
-- **ErrorMiddleware** : Gestion erreurs
-- **RateLimitMiddleware** : Limitation requêtes
+### Middleware (Protection et validation)
+- **AuthMiddleware** : Vérifie les tokens JWT
+- **ValidationMiddleware** : Valide les données avec Joi
+- **ErrorMiddleware** : Gestion centralisée des erreurs
+- **RateLimitMiddleware** : Protège contre les abus
 
-## 🛡️ Sécurité
+## � Sécurité (Super important !)
 
-- **JWT** : Tokens d'accès et refresh
-- **Helmet** : Sécurisation headers HTTP
-- **CORS** : Configuration cross-origin
-- **Rate Limiting** : Protection contre abus
-- **Input Validation** : Validation stricte
-- **Password Hashing** : Bcrypt
-- **HTTPS** : En production
+Notre backend est protégé par :
+- **JWT** : Tokens d'accès + refresh tokens pour la sécurité
+- **Helmet** : Protège les headers HTTP
+- **CORS** : Contrôle d'accès cross-origin
+- **Rate Limiting** : Protection contre les attaques
+- **Validation Joi** : Validation stricte de toutes les données
+- **Bcrypt** : Hashage des mots de passe
+- **HTTPS** : Obligatoire en production
 
-## 📊 Monitoring
+> **Note équipe** : Ne jamais désactiver la validation ou l'authentification, même pour les tests !
 
-- **Winston** : Logs structurés
-- **Health Check** : Endpoint `/health`
-- **Error Tracking** : Centralisation erreurs
-- **Performance** : Temps de réponse
+## � Monitoring & Debugging
+
+Pour surveiller et debugger notre backend :
+- **Winston** : Logs structurés (check les logs dans `logs/`)
+- **Health Check** : `GET /health` pour vérifier que tout va bien
+- **Error Tracking** : Centralisation des erreurs dans les logs
+- **Performance** : Temps de réponse monitoring
+
+> **Pour l'équipe** : En cas de problème, vérifiez d'abord les logs Winston !
 
 ## 🚀 Déploiement
 
-### Docker
+### Docker (Recommandé pour la production)
 ```bash
+# Build l'image
 docker build -t moxbnb-backend .
+
+# Lance le container
 docker run -p 3000:3000 moxbnb-backend
 ```
 
-### Environment Variables
-Variables requises :
-- `MONGODB_URI`
-- `JWT_SECRET`
-- `CLOUDINARY_CLOUD_NAME`
+### Variables d'environnement (.env)
 
-Variables de paiement (optionnelles - au moins une requise) :
-- `STRIPE_SECRET_KEY` - Pour Stripe
-- `STRIPE_PUBLISHABLE_KEY` - Pour Stripe
-- `STRIPE_WEBHOOK_SECRET` - Pour Stripe webhooks
-- `KONNECT_API_KEY` - Pour Konnect (Tunisie)
-- `KONNECT_BASE_URL` - URL API Konnect (défaut: https://api.konnect.tn)
-- `FLOUCI_API_KEY` - Pour Flouci (Tunisie)
-- `FLOUCI_BASE_URL` - URL API Flouci (défaut: https://api.flouci.com)
-- `CLICKTOPAY_API_KEY` - Pour Clicktopay (Tunisie)
-- `CLICKTOPAY_MERCHANT_ID` - ID marchand Clicktopay
-- `CLICKTOPAY_BASE_URL` - URL API Clicktopay (défaut: https://api.clicktopay.tn)
-- `FRONTEND_URL` - URL frontend pour les redirections de paiement
+**Obligatoires** (le backend ne démarre pas sans) :
+```env
+MONGODB_URI=mongodb://localhost:27017/moxbnb
+JWT_SECRET=votre_secret_super_long_et_unique
+CLOUDINARY_CLOUD_NAME=votre_cloud_name
+PORT=3000
+NODE_ENV=development
+```
 
-## 🤝 Contribuer
+**Paiements** (au moins un requis) :
+```env
+# Stripe (international)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 
-1. Fork le projet
-2. Créer une branche feature
-3. Commit les changements
-4. Push vers la branche
-5. Créer une Pull Request
+# Solutions tunisiennes
+KONNECT_API_KEY=votre_api_konnect
+FLOUCI_API_KEY=votre_api_flouci  
+CLICKTOPAY_API_KEY=votre_api_clicktopay
+CLICKTOPAY_MERCHANT_ID=votre_merchant_id
+```
+
+**Autres** :
+```env
+FRONTEND_URL=http://localhost:3000
+REDIS_URL=redis://localhost:6379
+EMAIL_HOST=smtp.gmail.com
+EMAIL_USER=votre_email
+EMAIL_PASS=votre_password
+```
+
+## 👥 Comment contribuer (Guide pour l'équipe)
+
+### Notre workflow
+1. **Fork** le projet sur votre GitHub
+2. **Créer une branche** : `git checkout -b feature/nouvelle-feature`
+3. **Coder** votre feature en suivant la structure du projet
+4. **Tester** : `npm test` et `npm run lint`
+5. **Commit** : `git commit -m "feat: ajoute nouvelle feature"`
+6. **Push** : `git push origin feature/nouvelle-feature`
+7. **Pull Request** : Sur la branche principale
+
+### Bonnes pratiques
+- Suivez la structure MVC établie
+- Commentez votre code (surtout la logique complexe)
+- Ajoutez des tests pour vos nouvelles features
+- Utilisez des messages de commit clairs
+- Ne jamais pusher de secrets API dans le code !
+
+### Support
+- **Slack** : #backend-moxbnb pour les questions techniques
+- **Code Review** : Toute PR doit être reviewée par au moins 1 autre dev
+- **Documentation** : Mettez à jour ce README si vous ajoutez des nouvelles features
 
 ## 📝 License
 
-MIT License - voir le fichier LICENSE
+MIT License - voir le fichier `LICENSE`
+
+---
+
+**Made with ❤️ by the Moxbnb Team**
+
+*Pour toute question technique : contactez l'équipe backend sur Slack*
