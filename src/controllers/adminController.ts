@@ -124,13 +124,12 @@ export const getAllServices = async (req: Request, res: Response) => {
     if (status) filter.status = status;
     if (search) {
       filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { 'provider.name': { $regex: search, $options: 'i' } }
+        { title: { $regex: search, $options: 'i' } }
       ];
     }
 
     const services = await Service.find(filter)
-      .populate('provider', 'name email phone')
+      .populate('providerId', 'name email phone')
       .sort(sort as any)
       .skip(skip)
       .limit(Number(limit))
@@ -159,7 +158,7 @@ export const getPendingServices = async (req: Request, res: Response) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const services = await Service.find({ status: 'pending' })
-      .populate('provider', 'name email phone')
+      .populate('providerId', 'name email phone')
       .sort('-createdAt')
       .skip(skip)
       .limit(Number(limit))
@@ -183,7 +182,7 @@ export const getPendingServices = async (req: Request, res: Response) => {
 
 export const getServiceDetails = async (req: Request, res: Response) => {
   try {
-    const service = await Service.findById(req.params.id).populate('provider');
+    const service = await Service.findById(req.params.id).populate('providerId');
     if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
     res.json({ success: true, data: service });
   } catch (error: any) {
@@ -231,13 +230,12 @@ export const getAllExperiences = async (req: Request, res: Response) => {
     if (status) filter.status = status;
     if (search) {
       filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { 'provider.name': { $regex: search, $options: 'i' } }
+        { title: { $regex: search, $options: 'i' } }
       ];
     }
 
     const experiences = await Experience.find(filter)
-      .populate('provider', 'name email phone')
+      .populate('providerId', 'name email phone')
       .sort(sort as any)
       .skip(skip)
       .limit(Number(limit))
@@ -266,7 +264,7 @@ export const getPendingExperiences = async (req: Request, res: Response) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const experiences = await Experience.find({ status: 'pending' })
-      .populate('provider', 'name email phone')
+      .populate('providerId', 'name email phone')
       .sort('-createdAt')
       .skip(skip)
       .limit(Number(limit))
@@ -290,7 +288,7 @@ export const getPendingExperiences = async (req: Request, res: Response) => {
 
 export const getExperienceDetails = async (req: Request, res: Response) => {
   try {
-    const experience = await Experience.findById(req.params.id).populate('provider');
+    const experience = await Experience.findById(req.params.id).populate('providerId');
     if (!experience) return res.status(404).json({ success: false, message: 'Experience not found' });
     res.json({ success: true, data: experience });
   } catch (error: any) {
@@ -571,6 +569,129 @@ export const getUserStats = async (req: Request, res: Response) => {
   }
 };
 
+const mapBookingToAdminResponse = (booking: any) => {
+  const user = booking.userId || booking.user || {};
+  const item = booking.listingId || booking.experienceId || booking.serviceId || {};
+
+  const itemTitle = item.title || item.name || 'Titre inconnu';
+  const type = booking.type ||
+    (booking.listingId ? 'PROPERTY' : booking.experienceId ? 'EXPERIENCE' : booking.serviceId ? 'SERVICE' : 'PROPERTY');
+
+  return {
+    id: booking._id?.toString() || booking.id,
+    user: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Client inconnu',
+    userEmail: user.email || '—',
+    status: booking.status,
+    type,
+    itemTitle,
+    guests: booking.guests,
+    totalPrice: booking.totalPrice,
+    currency: booking.currency,
+    checkIn: booking.checkIn ? booking.checkIn.toISOString().split('T')[0] : null,
+    checkOut: booking.checkOut ? booking.checkOut.toISOString().split('T')[0] : null,
+    createdAt: booking.createdAt,
+    updatedAt: booking.updatedAt,
+    paymentStatus: booking.paymentStatus,
+    booking
+  };
+};
+
+export const getAllReservations = async (req: Request, res: Response) => {
+  try {
+    const { status, page = 1, limit = 10 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const filter: any = {};
+    if (status) filter.status = String(status).toUpperCase();
+
+    const bookings = await Booking.find(filter)
+      .populate('userId', 'name email')
+      .populate('listingId', 'title')
+      .populate('experienceId', 'title')
+      .populate('serviceId', 'title')
+      .sort('-createdAt')
+      .skip(skip)
+      .limit(Number(limit))
+      .lean();
+
+    const total = await Booking.countDocuments(filter);
+
+    res.json({
+      success: true,
+      data: bookings.map(mapBookingToAdminResponse),
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        pages: Math.ceil(total / Number(limit))
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getPendingReservations = async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const bookings = await Booking.find({ status: 'PENDING' })
+      .populate('userId', 'name email')
+      .populate('listingId', 'title')
+      .populate('experienceId', 'title')
+      .populate('serviceId', 'title')
+      .sort('-createdAt')
+      .skip(skip)
+      .limit(Number(limit))
+      .lean();
+
+    const total = await Booking.countDocuments({ status: 'PENDING' });
+
+    res.json({
+      success: true,
+      data: bookings.map(mapBookingToAdminResponse),
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        pages: Math.ceil(total / Number(limit))
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateReservationStatus = async (req: Request, res: Response) => {
+  try {
+    const { status } = req.body;
+    const normalizedStatus = String(status || '').toUpperCase();
+
+    const allowed = ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'REFUNDED'];
+    if (!allowed.includes(normalizedStatus)) {
+      return res.status(400).json({ success: false, message: 'Statut invalide' });
+    }
+
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { status: normalizedStatus, updatedAt: new Date() },
+      { new: true }
+    )
+      .populate('userId', 'name email')
+      .populate('listingId', 'title')
+      .populate('experienceId', 'title')
+      .populate('serviceId', 'title')
+      .lean();
+
+    if (!booking) return res.status(404).json({ success: false, message: 'Réservation introuvable' });
+
+    res.json({ success: true, data: mapBookingToAdminResponse(booking), message: 'Statut de réservation mis à jour' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const getBookingStats = async (req: Request, res: Response) => {
   try {
     const stats = await Booking.aggregate([
@@ -590,7 +711,6 @@ export const getBookingStats = async (req: Request, res: Response) => {
 
 export const getAdminDashboard = async (req: Request, res: Response) => {
   try {
-    const overview = await getPlatformOverview.bind(null, req, {} as any)();
     const pendingListings = await Listing.countDocuments({ status: 'pending' });
     const pendingServices = await Service.countDocuments({ status: 'pending' });
     const pendingExperiences = await Experience.countDocuments({ status: 'pending' });

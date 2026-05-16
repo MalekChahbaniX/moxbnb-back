@@ -15,7 +15,7 @@ export const adminAuth = async (
       return;
     }
 
-    if (req.user.role !== 'admin') {
+    if (String(req.user.role).toUpperCase() !== 'ADMIN') {
       res.status(403).json({
         success: false,
         message: 'Admin access required. Insufficient permissions.'

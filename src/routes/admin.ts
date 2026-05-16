@@ -41,6 +41,11 @@ router.get('/reviews/flagged', adminController.getFlaggedReviews);
 router.put('/reviews/:id/approve', adminController.approveReview);
 router.put('/reviews/:id/reject', adminController.rejectReview);
 
+// Reservations management
+router.get('/reservations', adminController.getAllReservations);
+router.get('/reservations/pending', adminController.getPendingReservations);
+router.patch('/reservations/:id', adminController.updateReservationStatus);
+
 // Platform statistics
 router.get('/statistics/overview', adminController.getPlatformOverview);
 router.get('/statistics/revenue', adminController.getRevenueStats);
