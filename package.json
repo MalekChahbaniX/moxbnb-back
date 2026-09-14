@@ -13,7 +13,10 @@
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "seed": "ts-node -r tsconfig-paths/register scripts/seed-mongodb-simple.ts",
+    "seed": "npm run seed:users && npm run seed:marketplace",
+    "seed:users": "ts-node -r tsconfig-paths/register scripts/seed-users.ts",
+    "seed:marketplace": "ts-node -r tsconfig-paths/register scripts/seed-marketplace.ts",
+    "seed:reviews": "ts-node -r tsconfig-paths/register scripts/seed-reviews.ts",
     "seed:admin": "ts-node -r tsconfig-paths/register scripts/seed-admin-accounts.ts",
     "seed:admin:force": "ts-node -r tsconfig-paths/register scripts/seed-admin-accounts.ts --force-delete"
   },

@@ -22,7 +22,7 @@ export const validateRequest = (schema: Joi.ObjectSchema) => {
 
 export const validateQuery = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const { error } = schema.validate(req.query);
+    const { error } = schema.validate(req.query, { allowUnknown: true });
 
     if (error) {
       const errorMessage = error.details.map(detail => detail.message).join(', ');
@@ -67,7 +67,16 @@ export const commonSchemas = {
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(10),
     sort: Joi.string().valid('createdAt', 'price', 'rating', 'title').default('createdAt'),
-    order: Joi.string().valid('asc', 'desc').default('desc')
+    order: Joi.string().valid('asc', 'desc').default('desc'),
+    search: Joi.string().max(100),
+    category: Joi.string(),
+    type: Joi.string(),
+    minPrice: Joi.number().min(0),
+    maxPrice: Joi.number().min(0),
+    rating: Joi.number().min(1).max(5),
+    city: Joi.string(),
+    pricingType: Joi.string(),
+    targetAudience: Joi.string()
   }),
 
   search: Joi.object({
