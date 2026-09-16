@@ -48,6 +48,12 @@ export const loginSchema = Joi.object({
   })
 });
 
+export const googleLoginSchema = Joi.object({
+  idToken: Joi.string().required().messages({
+    'any.required': 'Google ID token is required'
+  })
+});
+
 export const refreshTokenSchema = Joi.object({
   refreshToken: Joi.string().required().messages({
     'any.required': 'Refresh token is required'

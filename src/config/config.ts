@@ -71,6 +71,7 @@ interface Config {
   };
   apiKeys: {
     googleMaps: string;
+    googleClientId: string;
     twilio: {
       accountSid: string;
       authToken: string;
@@ -169,6 +170,7 @@ const config: Config = {
   
   apiKeys: {
     googleMaps: process.env.GOOGLE_MAPS_API_KEY || '',
+    googleClientId: process.env.GOOGLE_CLIENT_ID || '',
     twilio: {
       accountSid: process.env.TWILIO_ACCOUNT_SID || '',
       authToken: process.env.TWILIO_AUTH_TOKEN || '',

@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { ApiResponse } from '../types';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { SupportTicket } from '../models';
+import mongoose from 'mongoose';
 
 // FAQ data (in a real app, this would come from a database)
 const faqs = [
@@ -39,11 +41,48 @@ const faqs = [
     question: 'Que faire en cas de problème pendant mon séjour ?',
     answer: 'En cas de problème pendant votre séjour, contactez d\'abord l\'hôte via notre messagerie. Si le problème n\'est pas résolu, vous pouvez nous contacter via le support disponible 24/7. Nous intervenons rapidement pour trouver une solution.',
     category: 'Séjour'
+  },
+  {
+    id: '7',
+    question: 'Quand suis-je payé après une réservation ?',
+    answer: 'Les fonds sont versés sur votre moyen de paiement enregistré dans les 24 à 48h suivant l\'arrivée du client ou la réalisation de l\'expérience ou du service.',
+    category: 'Paiement',
+    roles: ['host', 'provider']
+  },
+  {
+    id: '8',
+    question: 'Comment gérer un litige avec un client ?',
+    answer: 'Contactez-nous depuis cette page en précisant la référence de réservation. Notre équipe de médiation examine chaque cas sous 48h.',
+    category: 'Litiges',
+    roles: ['host', 'provider']
+  },
+  {
+    id: '9',
+    question: 'Pourquoi mon annonce a-t-elle été refusée ou suspendue ?',
+    answer: 'Une annonce peut être suspendue en cas de non-conformité aux règles de la plateforme. Ouvrez un ticket avec la référence de l\'annonce concernée pour faire appel.',
+    category: 'Annonces',
+    roles: ['host', 'provider']
+  },
+  {
+    id: '10',
+    question: 'Comment mettre mon annonce en pause temporairement ?',
+    answer: 'Depuis la gestion de vos annonces, désactivez temporairement l\'annonce concernée. Elle restera enregistrée et pourra être réactivée plus tard.',
+    category: 'Annonces',
+    roles: ['host', 'provider']
+  },
+  {
+    id: '11',
+    question: 'Comment modifier mes informations personnelles ?',
+    answer: 'Rendez-vous dans votre profil, puis dans Informations personnelles pour modifier votre nom, email, téléphone ou photo.',
+    category: 'Compte'
+  },
+  {
+    id: '12',
+    question: 'Comment supprimer mon compte ?',
+    answer: 'Ouvrez un ticket de support en catégorie Compte pour lancer la procédure de suppression définitive.',
+    category: 'Compte'
   }
 ];
-
-// In-memory storage for support tickets (in production, use a database)
-const supportTickets: any[] = [];
 
 // Get FAQs
 export const getFaqs = async (req: Request, res: Response): Promise<void> => {
@@ -71,7 +110,7 @@ export const getFaqs = async (req: Request, res: Response): Promise<void> => {
 export const createTicket = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
-    const { subject, message, category, priority } = req.body;
+    const { subject, message, category, priority, bookingRef } = req.body;
 
     if (!subject || !message) {
       res.status(400).json({
@@ -81,20 +120,16 @@ export const createTicket = async (req: AuthenticatedRequest, res: Response): Pr
       return;
     }
 
-    const ticket = {
-      id: Date.now().toString(),
+    const ticket = await SupportTicket.create({
       userId,
       subject,
       message,
-      category: category || 'general',
+      category: category || 'other',
       priority: priority || 'medium',
-      status: 'open',
-      createdAt: new Date(),
-      lastUpdate: new Date(),
-      responses: 0
-    };
-
-    supportTickets.push(ticket);
+      bookingRef: bookingRef || undefined,
+      replies: [{ author: 'user', text: message, date: new Date() }],
+      responses: 0,
+    });
 
     res.status(201).json({
       success: true,
@@ -118,19 +153,17 @@ export const getTickets = async (req: AuthenticatedRequest, res: Response): Prom
     const limitNum = Math.min(100, Math.max(1, Number(limit) || 20));
     const skip = (pageNum - 1) * limitNum;
 
-    let tickets = supportTickets.filter(ticket => ticket.userId === userId);
+    const filter: Record<string, any> = { userId };
     
     // Filter by status if specified
     if (status && status !== 'all') {
-      tickets = tickets.filter(ticket => ticket.status === status);
+      filter.status = status;
     }
 
-    // Sort by creation date (newest first)
-    tickets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    // Pagination
-    const total = tickets.length;
-    const paginatedTickets = tickets.slice(skip, skip + limitNum);
+    const [paginatedTickets, total] = await Promise.all([
+      SupportTicket.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum).lean(),
+      SupportTicket.countDocuments(filter),
+    ]);
 
     res.status(200).json({
       success: true,
@@ -158,9 +191,9 @@ export const getTicketById = async (req: AuthenticatedRequest, res: Response): P
     const userId = req.user?.id;
     const { ticketId } = req.params;
 
-    const ticket = supportTickets.find(t => 
-      t.id === ticketId && t.userId === userId
-    );
+    const ticket = mongoose.isValidObjectId(ticketId)
+      ? await SupportTicket.findOne({ _id: ticketId, userId }).lean()
+      : null;
 
     if (!ticket) {
       res.status(404).json({
@@ -188,12 +221,16 @@ export const updateTicket = async (req: AuthenticatedRequest, res: Response): Pr
     const userId = req.user?.id;
     const { ticketId } = req.params;
     const { status, message } = req.body;
+    const allowedStatuses = ['open', 'in_progress', 'resolved', 'closed'];
+    if (status && !allowedStatuses.includes(status)) {
+      res.status(400).json({ success: false, error: 'Invalid ticket status' } as ApiResponse);
+      return;
+    }
 
-    const ticketIndex = supportTickets.findIndex(t => 
-      t.id === ticketId && t.userId === userId
-    );
-
-    if (ticketIndex === -1) {
+    const ticket = mongoose.isValidObjectId(ticketId)
+      ? await SupportTicket.findOne({ _id: ticketId, userId })
+      : null;
+    if (!ticket) {
       res.status(404).json({
         success: false,
         error: 'Ticket not found'
@@ -201,17 +238,17 @@ export const updateTicket = async (req: AuthenticatedRequest, res: Response): Pr
       return;
     }
 
-    // Update ticket
-    if (status) supportTickets[ticketIndex].status = status;
-    if (message) {
-      // In a real app, you'd add this as a response to the ticket
-      supportTickets[ticketIndex].responses += 1;
+    if (status) ticket.status = status;
+    if (message?.trim()) {
+      if (ticket.status === 'resolved' || ticket.status === 'closed') ticket.status = 'open';
+      ticket.replies.push({ author: 'user', text: message.trim(), date: new Date() });
+      ticket.responses += 1;
     }
-    supportTickets[ticketIndex].lastUpdate = new Date();
+    await ticket.save();
 
     res.status(200).json({
       success: true,
-      data: { ticket: supportTickets[ticketIndex] }
+      data: { ticket }
     } as ApiResponse);
   } catch (error: any) {
     res.status(500).json({

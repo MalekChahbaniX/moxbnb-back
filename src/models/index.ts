@@ -8,3 +8,4 @@ export { Review, IReview } from './Review';
 export { Message, IMessage } from './Message';
 export { Notification, INotification } from './Notification';
 export { Transportation, ITransportation } from './Transportation';
+export { SupportTicket, ISupportTicket, ISupportReply } from './SupportTicket';

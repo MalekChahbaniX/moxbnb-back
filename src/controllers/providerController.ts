@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { User, Listing, Experience, Service, Booking, Review } from '../models';
+import { User, Listing, Experience, Service, Booking, Review, Message } from '../models';
 import { ApiResponse } from '../types';
 
 function buildBookingScopeOr(listings: { _id: unknown }[], experiences: { _id: unknown }[], services: { _id: unknown }[]) {
@@ -39,9 +39,10 @@ export const getProviderDashboard = async (req: Request, res: Response): Promise
     const scopeOr = buildBookingScopeOr(listings, experiences, services);
     const bookingQuery = scopeOr.length ? { $or: scopeOr } : { _id: { $exists: false } };
 
-    const [bookings, reviews] = await Promise.all([
+    const [bookings, reviews, unreadMessages] = await Promise.all([
       Booking.find(bookingQuery),
-      Review.find(buildReviewScopeQuery(listings, experiences, services))
+      Review.find(buildReviewScopeQuery(listings, experiences, services)),
+      Message.countDocuments({ receiverId: userId, isRead: false })
     ]);
 
     const now = new Date();
@@ -51,6 +52,9 @@ export const getProviderDashboard = async (req: Request, res: Response): Promise
 
     const monthlyBookings = bookings.filter((b) => new Date(b.createdAt) >= monthStart);
     const monthlyRevenue = monthlyBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    const upcomingBookings = bookings.filter((b) =>
+      (b.status === 'PENDING' || b.status === 'CONFIRMED') && new Date(b.checkIn) >= now
+    ).length;
 
     const publishedListings = listings.filter((l) => l.status === 'PUBLISHED');
     const activeListings = publishedListings.length;
@@ -134,6 +138,8 @@ export const getProviderDashboard = async (req: Request, res: Response): Promise
           monthlyRevenue,
           averageRating: Math.round(averageRating * 10) / 10,
           totalReviews: reviews.length,
+          upcomingBookings,
+          unreadMessages,
           occupancyRate,
           bookingStats
         },

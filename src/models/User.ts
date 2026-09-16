@@ -4,12 +4,15 @@ import bcrypt from 'bcryptjs';
 export interface IUser extends Document {
   email: string;
   password: string;
+  googleId?: string;
   firstName: string;
   lastName: string;
   phone?: string;
   avatar?: string;
   role: 'GUEST' | 'CLIENT' | 'HOST' | 'PROVIDER' | 'ADMIN';
   isVerified: boolean;
+  verificationTokenHash?: string;
+  verificationTokenExpires?: Date;
   isActive: boolean;
   language: string;
   currency: string;
@@ -46,6 +49,12 @@ export interface IUser extends Document {
     twoFactorAuth?: boolean;
     loginAlerts?: boolean;
     sessionTimeout?: boolean;
+    instantBooking?: boolean;
+    autoAcceptBookings?: boolean;
+    requireVerification?: boolean;
+    showPhone?: boolean;
+    autoReplyEnabled?: boolean;
+    autoReplyMessage?: string;
   };
   favorites?: Array<{
     _id?: string;
@@ -72,6 +81,12 @@ const userSchema = new Schema<IUser>({
     type: String,
     required: true,
     minlength: 6,
+    select: false
+  },
+  googleId: {
+    type: String,
+    sparse: true,
+    unique: true,
     select: false
   },
   firstName: {
@@ -103,6 +118,14 @@ const userSchema = new Schema<IUser>({
   isVerified: {
     type: Boolean,
     default: false
+  },
+  verificationTokenHash: {
+    type: String,
+    select: false
+  },
+  verificationTokenExpires: {
+    type: Date,
+    select: false
   },
   isActive: {
     type: Boolean,
@@ -196,7 +219,13 @@ const userSchema = new Schema<IUser>({
     promotions: { type: Boolean, default: false },
     twoFactorAuth: { type: Boolean, default: false },
     loginAlerts: { type: Boolean, default: true },
-    sessionTimeout: { type: Boolean, default: true }
+    sessionTimeout: { type: Boolean, default: true },
+    instantBooking: { type: Boolean, default: false },
+    autoAcceptBookings: { type: Boolean, default: false },
+    requireVerification: { type: Boolean, default: true },
+    showPhone: { type: Boolean, default: false },
+    autoReplyEnabled: { type: Boolean, default: false },
+    autoReplyMessage: { type: String, maxlength: 1000, default: '' }
   },
   favorites: [{
     type: { type: String, required: true },

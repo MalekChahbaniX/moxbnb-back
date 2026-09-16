@@ -1,9 +1,45 @@
 import { Request, Response } from 'express';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import { User } from '../models';
 import { config } from '../config/config';
 import { ApiResponse } from '../types';
+import { emailService } from '../services/emailService';
+
+const googleClient = new OAuth2Client();
+
+const createTokens = (user: any) => ({
+  token: jwt.sign(
+    { id: user._id, email: user.email, role: user.role },
+    config.jwt.secret,
+    { expiresIn: config.jwt.expiresIn } as jwt.SignOptions
+  ),
+  refreshToken: jwt.sign(
+    { id: user._id },
+    config.jwt.refreshSecret,
+    { expiresIn: config.jwt.refreshExpiresIn } as jwt.SignOptions
+  )
+});
+
+const publicUser = (user: any) => ({
+  id: user._id,
+  email: user.email,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  role: user.role,
+  isVerified: user.isVerified,
+  avatar: user.avatar
+});
+
+const issueVerificationEmail = async (user: any): Promise<void> => {
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  user.verificationTokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex');
+  user.verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await user.save();
+  await emailService.sendEmailVerificationEmail(user.email, verificationToken);
+};
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -61,6 +97,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const user = new User(userData);
 
     await user.save();
+
+    await issueVerificationEmail(user);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -164,6 +202,62 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({
       success: false,
       error: error.message || 'Server error during login'
+    } as ApiResponse);
+  }
+};
+
+export const googleLogin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!config.apiKeys.googleClientId) {
+      res.status(503).json({ success: false, error: 'Google sign-in is not configured' } as ApiResponse);
+      return;
+    }
+
+    const { idToken } = req.body;
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: config.apiKeys.googleClientId
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload?.sub || !payload.email || !payload.email_verified) {
+      res.status(401).json({ success: false, error: 'Google account could not be verified' } as ApiResponse);
+      return;
+    }
+
+    let user = await User.findOne({ $or: [{ googleId: payload.sub }, { email: payload.email.toLowerCase() }] });
+    if (!user) {
+      user = new User({
+        googleId: payload.sub,
+        email: payload.email.toLowerCase(),
+        password: crypto.randomBytes(32).toString('hex'),
+        firstName: payload.given_name || payload.name?.split(' ')[0] || 'Moxbnb',
+        lastName: payload.family_name || payload.name?.split(' ').slice(1).join(' ') || 'User',
+        avatar: payload.picture,
+        role: 'CLIENT',
+        isVerified: true
+      });
+      await user.save();
+    } else {
+      if (!user.googleId) user.googleId = payload.sub;
+      if (!user.isVerified) user.isVerified = true;
+      if (!user.avatar && payload.picture) user.avatar = payload.picture;
+      await user.save();
+    }
+
+    if (!user.isActive) {
+      res.status(401).json({ success: false, error: 'Account is deactivated' } as ApiResponse);
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { ...createTokens(user), user: publicUser(user) }
+    } as ApiResponse);
+  } catch (error: any) {
+    res.status(401).json({
+      success: false,
+      error: error.message || 'Google sign-in failed'
     } as ApiResponse);
   }
 };
@@ -354,8 +448,26 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
   try {
     const { token } = req.body;
 
-    // TODO: Implement email verification with token
-    // For now, just return success message
+    if (!token || typeof token !== 'string') {
+      res.status(400).json({ success: false, error: 'Verification token is required' } as ApiResponse);
+      return;
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      verificationTokenHash: tokenHash,
+      verificationTokenExpires: { $gt: new Date() },
+    }).select('+verificationTokenHash +verificationTokenExpires');
+
+    if (!user) {
+      res.status(400).json({ success: false, error: 'Verification token is invalid or expired' } as ApiResponse);
+      return;
+    }
+
+    user.isVerified = true;
+    user.verificationTokenHash = undefined;
+    user.verificationTokenExpires = undefined;
+    await user.save();
     
     res.status(200).json({
       success: true,
@@ -390,8 +502,7 @@ export const resendVerification = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    // TODO: Implement email sending with verification token
-    // For now, just return success message
+    await issueVerificationEmail(user);
     
     res.status(200).json({
       success: true,
@@ -408,6 +519,7 @@ export const resendVerification = async (req: Request, res: Response): Promise<v
 export const authController = {
   register,
   login,
+  googleLogin,
   refreshToken,
   logout,
   getProfile,

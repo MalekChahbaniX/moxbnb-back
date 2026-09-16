@@ -100,7 +100,7 @@ class EmailService {
   }
 
   async sendEmailVerificationEmail(email: string, verificationToken: string): Promise<void> {
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${config.frontend.url}/verify-email?token=${encodeURIComponent(verificationToken)}`;
     
     const html = `
       <h1>Vérification de l'email</h1>
