@@ -32,12 +32,8 @@ import transportationRoutes from './routes/transportation';
 
 const app = express();
 
-// Trust proxy only in production (e.g., Vercel). Avoid permissive trust in dev.
-if (config.env === 'production') {
-  app.set('trust proxy', true);
-} else {
-  app.set('trust proxy', false);
-}
+// The deployed API is behind a reverse proxy that forwards the client IP.
+app.set('trust proxy', config.trustProxy);
 
 // Initialize application
 const startServer = async () => {

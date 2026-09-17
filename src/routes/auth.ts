@@ -7,6 +7,7 @@ import { registerSchema, loginSchema, googleLoginSchema, refreshTokenSchema } fr
 const router = Router();
 
 // Public routes
+router.get('/google/config', authController.googleConfig);
 router.post('/register', validateRequest(registerSchema), authController.register);
 router.post('/login', validateRequest(loginSchema), authController.login);
 router.post('/google', validateRequest(googleLoginSchema), authController.googleLogin);

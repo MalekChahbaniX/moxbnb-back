@@ -7,6 +7,7 @@ import { User } from '../models';
 import { config } from '../config/config';
 import { ApiResponse } from '../types';
 import { emailService } from '../services/emailService';
+import { logger } from '../utils/logger';
 
 const googleClient = new OAuth2Client();
 
@@ -39,6 +40,13 @@ const issueVerificationEmail = async (user: any): Promise<void> => {
   user.verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
   await user.save();
   await emailService.sendEmailVerificationEmail(user.email, verificationToken);
+};
+
+export const googleConfig = async (_req: Request, res: Response): Promise<void> => {
+  res.status(200).json({
+    success: true,
+    data: { webClientId: config.apiKeys.googleClientId || null },
+  } as ApiResponse);
 };
 
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -98,7 +106,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     await user.save();
 
-    await issueVerificationEmail(user);
+    try {
+      await issueVerificationEmail(user);
+    } catch (error) {
+      // Account creation should not fail after the user has been saved.
+      logger.error('Registration succeeded but verification email could not be sent', error);
+    }
 
     // Generate JWT token
     const token = jwt.sign(
@@ -519,6 +532,7 @@ export const resendVerification = async (req: Request, res: Response): Promise<v
 export const authController = {
   register,
   login,
+  googleConfig,
   googleLogin,
   refreshToken,
   logout,

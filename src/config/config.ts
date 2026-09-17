@@ -6,6 +6,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 interface Config {
   env: string;
+  trustProxy: boolean;
   port: number;
   database: {
     url: string;
@@ -81,6 +82,8 @@ interface Config {
 
 const config: Config = {
   env: process.env.NODE_ENV || 'production',
+  // The production API runs behind a reverse proxy which forwards client IPs.
+  trustProxy: process.env.TRUST_PROXY !== 'false',
   port: parseInt(process.env.PORT || '3000', 10),
   
   database: {
@@ -102,9 +105,9 @@ const config: Config = {
   email: {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT || '587', 10),
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || '',
-    from: process.env.FROM_EMAIL || 'noreply@moxbnb.tn',
+    user: process.env.SMTP_USER || 'moxbnb.app@gmail.com',
+    pass: process.env.SMTP_PASS || 'igfx iqwu wcae qnmt',
+    from: process.env.FROM_EMAIL || 'moxbnb.app@gmail.com',
     fromName: process.env.FROM_NAME || 'Moxbnb',
   },
   
@@ -170,7 +173,7 @@ const config: Config = {
   
   apiKeys: {
     googleMaps: process.env.GOOGLE_MAPS_API_KEY || '',
-    googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+    googleClientId: process.env.GOOGLE_CLIENT_ID || '691930962067-ui9umg94hm2vi9ihphed00gs0fjt2g5t.apps.googleusercontent.com',
     twilio: {
       accountSid: process.env.TWILIO_ACCOUNT_SID || '',
       authToken: process.env.TWILIO_AUTH_TOKEN || '',
