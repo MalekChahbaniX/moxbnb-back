@@ -262,9 +262,9 @@ export const updateTicket = async (req: AuthenticatedRequest, res: Response): Pr
 export const getContactInfo = async (req: Request, res: Response): Promise<void> => {
   try {
     const contactInfo = {
-      phone: '+216 71 123 456',
+      phone: '+216 28 653 396',
       email: 'support@moxbnb.com',
-      whatsapp: '+216 71 123 456',
+      whatsapp: '+216 28 653 396',
       chat: 'available',
       workingHours: '24/7'
     };
