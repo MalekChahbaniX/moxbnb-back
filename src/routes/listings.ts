@@ -9,6 +9,7 @@ const router = Router();
 
 // Public routes
 router.get('/', validateQuery(commonSchemas.pagination), listingController.getListings);
+router.get('/promotions', listingController.getPromotionalListings);
 router.get('/featured', listingController.getFeaturedListings);
 router.get('/students', validateQuery(commonSchemas.pagination), listingController.getStudentListings);
 router.get('/search', validateQuery(commonSchemas.search), listingController.searchListings);

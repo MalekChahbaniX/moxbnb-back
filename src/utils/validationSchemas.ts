@@ -73,6 +73,32 @@ export const updateProfileSchema = Joi.object({
 });
 
 // Listing validation schemas
+const listingPromotionFields = {
+  promotionPercent: Joi.number().integer().min(1).max(90).allow(null),
+  promotionStartDate: Joi.date().iso().allow(null),
+  promotionEndDate: Joi.date().iso().allow(null)
+};
+
+const validateListingPromotion = (value: Record<string, any>, helpers: Joi.CustomHelpers) => {
+  const fields = ['promotionPercent', 'promotionStartDate', 'promotionEndDate'];
+  const suppliedFields = fields.filter((field) => Object.prototype.hasOwnProperty.call(value, field));
+  const configuredFields = fields.filter((field) => value[field] !== undefined && value[field] !== null);
+
+  if (suppliedFields.length > 0 && suppliedFields.length !== fields.length) {
+    return helpers.error('any.custom', { message: 'A promotion requires a percentage, start date, and end date' });
+  }
+
+  if (configuredFields.length > 0 && configuredFields.length !== fields.length) {
+    return helpers.error('any.custom', { message: 'A promotion requires a percentage, start date, and end date' });
+  }
+
+  if (configuredFields.length === fields.length && value.promotionStartDate >= value.promotionEndDate) {
+    return helpers.error('any.custom', { message: 'Promotion end date must be after its start date' });
+  }
+
+  return value;
+};
+
 export const createListingSchema = Joi.object({
   title: Joi.string().min(10).max(200).required().messages({
     'string.min': 'Title must be at least 10 characters long',
@@ -90,6 +116,9 @@ export const createListingSchema = Joi.object({
     'number.min': 'Price must be a positive number',
     'any.required': 'Price is required'
   }),
+  pricingType: Joi.string().valid('NIGHTLY', 'MONTHLY', 'BOTH').default('NIGHTLY'),
+  monthlyPrice: Joi.number().min(0).optional(),
+  ...listingPromotionFields,
   currency: Joi.string().valid('TND', 'EUR', 'USD').default('TND'),
   address: Joi.string().required(),
   city: Joi.string().required(),
@@ -104,9 +133,10 @@ export const createListingSchema = Joi.object({
   bathrooms: Joi.number().integer().min(0).max(20).optional(),
   maxGuests: Joi.number().integer().min(1).max(50).required(),
   size: Joi.number().min(0).optional(),
+  targetAudience: Joi.string().valid('GENERAL', 'STUDENTS', 'FAMILIES', 'PROFESSIONALS').default('GENERAL'),
   rules: Joi.array().items(Joi.string()).default([]),
   status: Joi.string().valid('DRAFT', 'PUBLISHED', 'RENTED', 'SUSPENDED', 'ARCHIVED').default('DRAFT')
-});
+}).custom(validateListingPromotion);
 
 export const updateListingSchema = Joi.object({
   title: Joi.string().min(10).max(200).optional(),
@@ -114,6 +144,7 @@ export const updateListingSchema = Joi.object({
   type: Joi.string().valid('APARTMENT', 'HOUSE', 'VILLA', 'STUDIO', 'ROOM', 'CABIN', 'LOFT', 'CONDO', 'TOWNHOUSE').optional(),
   category: Joi.string().optional(),
   price: Joi.number().min(0).optional(),
+  ...listingPromotionFields,
   currency: Joi.string().valid('TND', 'EUR', 'USD').optional(),
   address: Joi.string().optional(),
   city: Joi.string().optional(),
@@ -127,7 +158,7 @@ export const updateListingSchema = Joi.object({
   size: Joi.number().min(0).optional(),
   rules: Joi.array().items(Joi.string()).optional(),
   status: Joi.string().valid('DRAFT', 'PUBLISHED', 'RENTED', 'SUSPENDED', 'ARCHIVED').optional()
-});
+}).custom(validateListingPromotion);
 
 // Booking validation schemas
 export const createBookingSchema = Joi.object({
@@ -248,13 +279,17 @@ export const createPaymentIntentSchema = Joi.object({
     'number.min': 'Amount must be greater than 0',
     'any.required': 'Amount is required'
   }),
-  currency: Joi.string().valid('usd', 'eur', 'tnd').default('usd')
+  currency: Joi.string().valid('TND', 'EUR', 'USD', 'tnd', 'eur', 'usd').default('TND'),
+  provider: Joi.string().valid('STRIPE', 'KONNECT', 'FLOUCI', 'CLICKTOPAY').optional(),
+  returnUrl: Joi.string().uri().optional(),
+  cancelUrl: Joi.string().uri().optional()
 });
 
 export const confirmPaymentSchema = Joi.object({
   paymentIntentId: Joi.string().required().messages({
     'any.required': 'Payment intent ID is required'
-  })
+  }),
+  provider: Joi.string().valid('STRIPE', 'KONNECT', 'FLOUCI', 'CLICKTOPAY').optional()
 });
 
 export const refundPaymentSchema = Joi.object({

@@ -364,7 +364,12 @@ class PaymentServiceFactory {
     
     if (process.env.KONNECT_API_KEY) providers.push('KONNECT');
     if (process.env.FLOUCI_API_KEY) providers.push('FLOUCI');
-    if (process.env.CLICKTOPAY_API_KEY) providers.push('CLICKTOPAY');
+    if (
+      process.env.CLICKTOPAY_API_KEY?.trim() &&
+      process.env.CLICKTOPAY_MERCHANT_ID?.trim()
+    ) {
+      providers.push('CLICKTOPAY');
+    }
     
     return providers;
   }

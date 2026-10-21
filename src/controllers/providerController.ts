@@ -33,14 +33,17 @@ export const getProviderDashboard = async (req: Request, res: Response): Promise
     const [listings, experiences, services] = await Promise.all([
       Listing.find({ hostId: userId }),
       Experience.find({ hostId: userId }),
-      Service.find({ hostId: userId })
+      Service.find({ providerId: userId })
     ]);
 
     const scopeOr = buildBookingScopeOr(listings, experiences, services);
     const bookingQuery = scopeOr.length ? { $or: scopeOr } : { _id: { $exists: false } };
 
     const [bookings, reviews, unreadMessages] = await Promise.all([
-      Booking.find(bookingQuery),
+      Booking.find(bookingQuery)
+        .populate('listingId', 'title')
+        .populate('experienceId', 'title')
+        .populate('serviceId', 'title'),
       Review.find(buildReviewScopeQuery(listings, experiences, services)),
       Message.countDocuments({ receiverId: userId, isRead: false })
     ]);
@@ -167,7 +170,7 @@ export const getProviderEarnings = async (req: Request, res: Response): Promise<
     const [listings, experiences, services] = await Promise.all([
       Listing.find({ hostId: userId }),
       Experience.find({ hostId: userId }),
-      Service.find({ hostId: userId })
+      Service.find({ providerId: userId })
     ]);
 
     // Build booking query
@@ -242,7 +245,7 @@ export const getProviderBookings = async (req: Request, res: Response): Promise<
     const [listings, experiences, services] = await Promise.all([
       Listing.find({ hostId: userId }),
       Experience.find({ hostId: userId }),
-      Service.find({ hostId: userId })
+      Service.find({ providerId: userId })
     ]);
 
     // Build booking query
@@ -314,7 +317,7 @@ export const updateBookingStatus = async (req: Request, res: Response): Promise<
     const [listings, experiences, services] = await Promise.all([
       Listing.find({ hostId: userId }),
       Experience.find({ hostId: userId }),
-      Service.find({ hostId: userId })
+      Service.find({ providerId: userId })
     ]);
 
     // Build query to find booking that belongs to provider
@@ -361,7 +364,7 @@ export const getProviderServices = async (req: Request, res: Response): Promise<
     const userId = (req as any).user.id;
     const { page = 1, limit = 10, status } = req.query;
 
-    const query: any = { hostId: userId };
+    const query: any = { providerId: userId };
     if (status) {
       query.status = status;
     }
@@ -407,7 +410,7 @@ export const getProviderReviews = async (req: Request, res: Response): Promise<v
     const [listings, experiences, services] = await Promise.all([
       Listing.find({ hostId: userId }),
       Experience.find({ hostId: userId }),
-      Service.find({ hostId: userId })
+      Service.find({ providerId: userId })
     ]);
 
     const scope = buildReviewScopeQuery(listings, experiences, services);

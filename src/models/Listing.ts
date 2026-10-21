@@ -6,6 +6,9 @@ export interface IListing extends Document {
   type: 'APARTMENT' | 'HOUSE' | 'VILLA' | 'STUDIO' | 'ROOM' | 'CABIN' | 'LOFT' | 'CONDO' | 'TOWNHOUSE' | 'SHARED_ROOM' | 'SHARED_ROOM_STUDENTS' | 'PRIVATE_ROOM_STUDENTS' | 'ENTIRE_MAISON_STUDENTS';
   category: string;
   price: number;
+  promotionPercent?: number;
+  promotionStartDate?: Date;
+  promotionEndDate?: Date;
   monthlyPrice?: number; // Prix mensuel si applicable
   pricingType: 'NIGHTLY' | 'MONTHLY' | 'BOTH'; // Type de prix
   currency: string;
@@ -56,6 +59,17 @@ const listingSchema = new Schema<IListing>({
     type: Number,
     required: true,
     min: 0
+  },
+  promotionPercent: {
+    type: Number,
+    min: 1,
+    max: 90
+  },
+  promotionStartDate: {
+    type: Date
+  },
+  promotionEndDate: {
+    type: Date
   },
   monthlyPrice: {
     type: Number,
@@ -156,6 +170,7 @@ listingSchema.index({ title: 'text', description: 'text' });
 listingSchema.index({ city: 1, country: 1 });
 listingSchema.index({ type: 1, category: 1 });
 listingSchema.index({ price: 1 });
+listingSchema.index({ status: 1, promotionStartDate: 1, promotionEndDate: 1 });
 listingSchema.index({ monthlyPrice: 1 });
 listingSchema.index({ pricingType: 1 });
 listingSchema.index({ targetAudience: 1 });

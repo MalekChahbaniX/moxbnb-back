@@ -2,6 +2,26 @@ import { Request, Response } from 'express';
 import { Listing, Experience, Service, Booking, Review } from '../models';
 import { ApiResponse, PaginationInfo, QueryParams } from '../types';
 
+const withListingReviewStats = async (listings: any[]): Promise<any[]> => {
+  if (!listings.length) return [];
+
+  const stats = await Review.aggregate([
+    { $match: { listingId: { $in: listings.map((listing) => listing._id) } } },
+    { $group: { _id: '$listingId', rating: { $avg: '$rating' }, reviews: { $sum: 1 } } }
+  ]);
+  const statsById = new Map(
+    stats.map((item) => [String(item._id), {
+      rating: Math.round(item.rating * 10) / 10,
+      reviews: item.reviews
+    }])
+  );
+
+  return listings.map((listing) => ({
+    ...(typeof listing.toObject === 'function' ? listing.toObject() : listing),
+    ...(statsById.get(String(listing._id)) || { rating: 0, reviews: 0 })
+  }));
+};
+
 export const getListings = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
@@ -79,7 +99,7 @@ export const getListings = async (req: Request, res: Response): Promise<void> =>
 
     res.status(200).json({
       success: true,
-      data: listings,
+      data: await withListingReviewStats(listings),
       pagination
     } as ApiResponse);
   } catch (error: any) {
@@ -103,12 +123,39 @@ export const getFeaturedListings = async (req: Request, res: Response): Promise<
 
     res.status(200).json({
       success: true,
-      data: listings
+      data: await withListingReviewStats(listings)
     } as ApiResponse);
   } catch (error: any) {
     res.status(500).json({
       success: false,
       error: error.message || 'Server error fetching featured listings'
+    } as ApiResponse);
+  }
+};
+
+export const getPromotionalListings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const now = new Date();
+    const listings = await Listing.find({
+      status: 'PUBLISHED',
+      promotionPercent: { $gt: 0, $lte: 90 },
+      promotionStartDate: { $lte: now },
+      promotionEndDate: { $gt: now }
+    })
+      .sort({ promotionEndDate: 1 })
+      .limit(20)
+      .populate('hostId', 'firstName lastName avatar')
+      .lean()
+      .exec();
+
+    res.status(200).json({
+      success: true,
+      data: await withListingReviewStats(listings)
+    } as ApiResponse);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error fetching promotional listings'
     } as ApiResponse);
   }
 };
@@ -144,7 +191,7 @@ export const searchListings = async (req: Request, res: Response): Promise<void>
 
     res.status(200).json({
       success: true,
-      data: listings
+      data: await withListingReviewStats(listings)
     } as ApiResponse);
   } catch (error: any) {
     res.status(500).json({
@@ -207,6 +254,8 @@ export const getMyListings = async (req: Request, res: Response): Promise<void> 
       const rs = rMap[id] || { avgRating: 0, reviews: 0 };
       return {
         ...l,
+        rating: rs.avgRating ? Math.round(rs.avgRating * 10) / 10 : 0,
+        reviews: rs.reviews || 0,
         stats: {
           bookings: bs.bookings,
           revenue: bs.revenue || 0,
@@ -257,11 +306,18 @@ export const getListingById = async (req: Request, res: Response): Promise<void>
       .populate('userId', 'firstName lastName avatar')
       .sort({ createdAt: -1 })
       .exec();
+    const averageRating = reviews.length
+      ? reviews.reduce((total, review) => total + review.rating, 0) / reviews.length
+      : 0;
 
     res.status(200).json({
       success: true,
       data: {
-        listing,
+        listing: {
+          ...listing.toObject(),
+          rating: Math.round(averageRating * 10) / 10,
+          reviews: reviews.length
+        },
         reviews
       }
     } as ApiResponse);
@@ -466,7 +522,7 @@ export const getStudentListings = async (req: Request, res: Response): Promise<v
 
     res.status(200).json({
       success: true,
-      data: listings,
+      data: await withListingReviewStats(listings),
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -487,6 +543,7 @@ export const getStudentListings = async (req: Request, res: Response): Promise<v
 export const listingController = {
   getListings,
   getFeaturedListings,
+  getPromotionalListings,
   searchListings,
   getMyListings,
   getListingById,

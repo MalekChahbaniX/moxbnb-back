@@ -52,6 +52,14 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response): Promis
 export const getUserById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid user ID'
+      } as ApiResponse);
+      return;
+    }
+
     const user = await User.findById(id).select('-password').exec();
 
     if (!user || !user.isActive) {

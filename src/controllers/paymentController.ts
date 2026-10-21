@@ -109,7 +109,7 @@ export const paymentController = {
   confirmPayment: async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user?.id;
-      const { paymentIntentId, provider = 'STRIPE' } = req.body;
+      const { paymentIntentId, provider } = req.body;
 
       if (!paymentIntentId) {
         return res.status(400).json({
@@ -117,12 +117,6 @@ export const paymentController = {
           error: 'Payment intent ID is required',
         });
       }
-
-      // Confirm payment using the service
-      const paymentIntent = await paymentService.confirmPayment({
-        paymentIntentId,
-        provider,
-      });
 
       // Find booking by payment intent ID
       const booking = await Booking.findOne({ paymentIntentId });
@@ -141,6 +135,20 @@ export const paymentController = {
           error: 'Unauthorized to confirm this payment',
         });
       }
+
+      if (booking.paymentProvider && provider && booking.paymentProvider !== provider) {
+        return res.status(400).json({
+          success: false,
+          error: 'Payment provider does not match the booking',
+        });
+      }
+
+      // Use the provider recorded with the booking when the client omits it.
+      const paymentProvider = provider || booking.paymentProvider || 'STRIPE';
+      const paymentIntent = await paymentService.confirmPayment({
+        paymentIntentId,
+        provider: paymentProvider,
+      });
 
       // Update booking payment status based on payment intent status
       if (paymentIntent.status === 'succeeded' || paymentIntent.status === 'COMPLETED' || paymentIntent.status === 'PAID') {

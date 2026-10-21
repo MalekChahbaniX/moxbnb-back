@@ -9,7 +9,7 @@ export const getServices = async (req: Request, res: Response): Promise<void> =>
     const limitNum = Math.min(100, Math.max(1, Number(limit) || 10));
     const skip = (pageNum - 1) * limitNum;
 
-    const query: any = { status: 'PUBLISHED' };
+    const query: any = { status: { $in: ['PUBLISHED', 'UNAVAILABLE'] } };
     if (category) query.category = category;
     if (city) query.city = { $regex: city, $options: 'i' };
     if (featured === 'true') query.isFeatured = true;
@@ -55,7 +55,7 @@ export const getServiceById = async (req: Request, res: Response): Promise<void>
       .populate('providerId', 'firstName lastName avatar phone email')
       .exec();
 
-    if (!service || service.status !== 'PUBLISHED') {
+    if (!service || !['PUBLISHED', 'UNAVAILABLE'].includes(service.status)) {
       res.status(404).json({
         success: false,
         error: 'Service not found'

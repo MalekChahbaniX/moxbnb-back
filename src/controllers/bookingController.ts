@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Booking } from '../models';
+import { Booking, Listing, Service } from '../models';
 import { ApiResponse } from '../types';
 
 export const getBookings = async (req: Request, res: Response): Promise<void> => {
@@ -46,7 +46,57 @@ export const getBookings = async (req: Request, res: Response): Promise<void> =>
 export const createBooking = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user.id;
-    const bookingData = { ...req.body, userId };
+    let authoritativePrice = req.body.totalPrice;
+    let currency = req.body.currency || 'TND';
+
+    if (req.body.listingId) {
+      const listing = await Listing.findOne({ _id: req.body.listingId, status: 'PUBLISHED' });
+      if (!listing) {
+        res.status(400).json({
+          success: false,
+          error: 'This listing is unavailable for booking'
+        } as ApiResponse);
+        return;
+      }
+
+      const checkIn = new Date(req.body.checkIn);
+      const checkOut = new Date(req.body.checkOut);
+      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+      if (!Number.isFinite(nights) || nights < 1) {
+        res.status(400).json({
+          success: false,
+          error: 'Check-out date must be after check-in date'
+        } as ApiResponse);
+        return;
+      }
+
+      const now = new Date();
+      const promotionIsActive =
+        Number(listing.promotionPercent) > 0 &&
+        listing.promotionStartDate != null &&
+        listing.promotionEndDate != null &&
+        listing.promotionStartDate <= now &&
+        listing.promotionEndDate > now;
+      const discount = promotionIsActive ? Number(listing.promotionPercent) / 100 : 0;
+      authoritativePrice = Math.round(listing.price * nights * (1 - discount) * 100) / 100;
+      currency = listing.currency;
+    }
+
+    if (req.body.serviceId) {
+      const service = await Service.findOne({
+        _id: req.body.serviceId,
+        status: 'PUBLISHED'
+      });
+      if (!service) {
+        res.status(400).json({
+          success: false,
+          error: 'This service is unavailable for booking'
+        } as ApiResponse);
+        return;
+      }
+    }
+
+    const bookingData = { ...req.body, totalPrice: authoritativePrice, currency, userId };
 
     const booking = new Booking(bookingData);
     await booking.save();
