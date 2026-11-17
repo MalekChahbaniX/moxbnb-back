@@ -20,8 +20,8 @@
 - **URL du serveur web du commerçant :** À confirmer avec le commerçant. L'API de production configurée dans l'application mobile utilise `https://api.moxbnb.com` ; cela ne confirme pas l'URL publique du site Web.
 - **E-mail de notification des autorisations accordées :** À compléter avec l'adresse de contact désignée pour recevoir les notifications de la banque
 - **URL de notification :** `https://api.moxbnb.com/api/payments/webhook/clicktopay` — **proposée, à confirmer et à activer** après implémentation du webhook suivant les spécifications de la banque
-- **URL de retour par défaut si le paiement est accepté :** `https://<domaine-du-site>/payment/success` — **à confirmer et à implémenter** ; remplacer le domaine par l'URL publique officielle du site
-- **URL de retour par défaut si le paiement est refusé ou un problème a eu lieu :** `https://<domaine-du-site>/payment/cancel` — **à confirmer et à implémenter** ; remplacer le domaine par l'URL publique officielle du site
+- **URL de retour par défaut si le paiement est accepté :** `https://moxbnb.com/payment/success` — **à confirmer et à implémenter** ; remplacer le domaine par l'URL publique officielle du site
+- **URL de retour par défaut si le paiement est refusé ou un problème a eu lieu :** `https://moxbnb.com/payment/cancel` — **à confirmer et à implémenter** ; remplacer le domaine par l'URL publique officielle du site
 
 ### Options de sécurité
 

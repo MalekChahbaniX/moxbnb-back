@@ -16,6 +16,7 @@
     "seed": "npm run seed:users && npm run seed:marketplace",
     "seed:users": "ts-node -r tsconfig-paths/register scripts/seed-users.ts",
     "seed:marketplace": "ts-node -r tsconfig-paths/register scripts/seed-marketplace.ts",
+    "seed:promotions": "ts-node -r tsconfig-paths/register scripts/seed-promotions.ts",
     "seed:reviews": "ts-node -r tsconfig-paths/register scripts/seed-reviews.ts",
     "seed:admin": "ts-node -r tsconfig-paths/register scripts/seed-admin-accounts.ts",
     "seed:admin:force": "ts-node -r tsconfig-paths/register scripts/seed-admin-accounts.ts --force-delete"

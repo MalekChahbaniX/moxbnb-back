@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { Booking, Listing, Service } from '../models';
+import { Booking } from '../models';
 import { ApiResponse } from '../types';
+import { calculatePromotionQuote, findRedeemablePromoCode, redeemPromoCode, undoPromoCodeRedemption } from '../utils/promotionPricing';
 
 export const getBookings = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -44,59 +45,60 @@ export const getBookings = async (req: Request, res: Response): Promise<void> =>
 };
 
 export const createBooking = async (req: Request, res: Response): Promise<void> => {
+  let claimedPromoCodeId: any;
+  let claimedUserId: string | undefined;
   try {
     const userId = (req as any).user.id;
-    let authoritativePrice = req.body.totalPrice;
-    let currency = req.body.currency || 'TND';
-
-    if (req.body.listingId) {
-      const listing = await Listing.findOne({ _id: req.body.listingId, status: 'PUBLISHED' });
-      if (!listing) {
-        res.status(400).json({
-          success: false,
-          error: 'This listing is unavailable for booking'
-        } as ApiResponse);
-        return;
-      }
-
-      const checkIn = new Date(req.body.checkIn);
-      const checkOut = new Date(req.body.checkOut);
-      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-      if (!Number.isFinite(nights) || nights < 1) {
-        res.status(400).json({
-          success: false,
-          error: 'Check-out date must be after check-in date'
-        } as ApiResponse);
-        return;
-      }
-
-      const now = new Date();
-      const promotionIsActive =
-        Number(listing.promotionPercent) > 0 &&
-        listing.promotionStartDate != null &&
-        listing.promotionEndDate != null &&
-        listing.promotionStartDate <= now &&
-        listing.promotionEndDate > now;
-      const discount = promotionIsActive ? Number(listing.promotionPercent) / 100 : 0;
-      authoritativePrice = Math.round(listing.price * nights * (1 - discount) * 100) / 100;
-      currency = listing.currency;
+    const type = req.body.type;
+    const itemKey = type === 'PROPERTY' ? 'listingId' : type === 'EXPERIENCE' ? 'experienceId' : type === 'SERVICE' ? 'serviceId' : null;
+    const suppliedItems = ['listingId', 'experienceId', 'serviceId'].filter((key) => req.body[key]);
+    if (!itemKey || suppliedItems.length !== 1 || suppliedItems[0] !== itemKey) {
+      res.status(400).json({ success: false, error: 'Provide exactly one offer ID matching the booking type' } as ApiResponse);
+      return;
     }
 
-    if (req.body.serviceId) {
-      const service = await Service.findOne({
-        _id: req.body.serviceId,
-        status: 'PUBLISHED'
-      });
-      if (!service) {
-        res.status(400).json({
-          success: false,
-          error: 'This service is unavailable for booking'
-        } as ApiResponse);
-        return;
-      }
+    const quote = await calculatePromotionQuote({
+      type,
+      itemId: req.body[itemKey],
+      checkIn: req.body.checkIn,
+      checkOut: req.body.checkOut,
+    });
+
+    let discountAmount = quote.offerDiscount;
+    let totalPrice = quote.offerPrice;
+    let promotionSource: 'NONE' | 'OFFER' | 'COUPON' = quote.offerActive ? 'OFFER' : 'NONE';
+    let normalizedPromoCode: string | undefined;
+    let promoCodeId: any;
+
+    if (req.body.promoCode) {
+      const promoCode = await findRedeemablePromoCode(String(req.body.promoCode), userId);
+      normalizedPromoCode = promoCode.code;
+      promoCodeId = promoCode._id;
+      discountAmount = Math.round(quote.originalPrice * (promoCode.percent / 100) * 100) / 100;
+      totalPrice = Math.max(0, quote.originalPrice - discountAmount);
+      promotionSource = 'COUPON';
     }
 
-    const bookingData = { ...req.body, totalPrice: authoritativePrice, currency, userId };
+    if (normalizedPromoCode) {
+      const claimedCode = await redeemPromoCode(promoCodeId, userId);
+      if (!claimedCode) {
+        res.status(409).json({ success: false, error: 'This promo code has just reached its usage limit or was already used' } as ApiResponse);
+        return;
+      }
+      claimedPromoCodeId = promoCodeId;
+      claimedUserId = userId;
+    }
+
+    const bookingData = {
+      ...req.body,
+      totalPrice,
+      basePrice: quote.originalPrice,
+      discountAmount,
+      promotionSource,
+      promoCode: normalizedPromoCode,
+      currency: quote.currency,
+      userId,
+    };
 
     const booking = new Booking(bookingData);
     await booking.save();
@@ -111,6 +113,15 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
       data: booking
     } as ApiResponse);
   } catch (error: any) {
+    if (claimedPromoCodeId && claimedUserId) {
+      await undoPromoCodeRedemption(claimedPromoCodeId, claimedUserId);
+    }
+    if (typeof error?.message === 'string' && (error.message === 'Invalid offer ID' || error.message === 'This offer is unavailable for booking' ||
+      error?.message === 'Check-out date must be after check-in date' ||
+      error.message.toLowerCase().includes('promo code'))) {
+      res.status(400).json({ success: false, error: error.message } as ApiResponse);
+      return;
+    }
     res.status(500).json({
       success: false,
       error: error.message || 'Server error creating booking'

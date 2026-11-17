@@ -7,6 +7,10 @@ export interface IBooking extends Document {
   checkOut?: Date;
   guests: number;
   totalPrice: number;
+  basePrice: number;
+  discountAmount: number;
+  promoCode?: string;
+  promotionSource: 'NONE' | 'OFFER' | 'COUPON';
   currency: string;
   specialRequests?: string;
   paymentStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
@@ -57,6 +61,10 @@ const bookingSchema = new Schema<IBooking>({
     required: true,
     min: 0
   },
+  basePrice: { type: Number, required: true, min: 0 },
+  discountAmount: { type: Number, required: true, min: 0, default: 0 },
+  promoCode: { type: String, trim: true, uppercase: true },
+  promotionSource: { type: String, enum: ['NONE', 'OFFER', 'COUPON'], default: 'NONE' },
   currency: {
     type: String,
     default: 'TND',

@@ -5,6 +5,10 @@ export interface IExperience extends Document {
   description: string;
   category: string;
   price: number;
+  promotionPercent?: number;
+  promotionStartDate?: Date;
+  promotionEndDate?: Date;
+  promotionStatus: 'ACTIVE' | 'SUSPENDED';
   currency: string;
   duration: number; // in minutes
   maxGuests: number;
@@ -48,6 +52,10 @@ const experienceSchema = new Schema<IExperience>({
     required: true,
     min: 0
   },
+  promotionPercent: { type: Number, min: 1, max: 90 },
+  promotionStartDate: { type: Date },
+  promotionEndDate: { type: Date },
+  promotionStatus: { type: String, enum: ['ACTIVE', 'SUSPENDED'], default: 'ACTIVE' },
   currency: {
     type: String,
     default: 'TND',
@@ -135,6 +143,7 @@ experienceSchema.index({ title: 'text', description: 'text' });
 experienceSchema.index({ city: 1, country: 1 });
 experienceSchema.index({ category: 1 });
 experienceSchema.index({ price: 1 });
+experienceSchema.index({ status: 1, promotionStartDate: 1, promotionEndDate: 1 });
 experienceSchema.index({ difficulty: 1 });
 experienceSchema.index({ status: 1 });
 experienceSchema.index({ isFeatured: 1 });

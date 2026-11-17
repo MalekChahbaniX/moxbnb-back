@@ -29,6 +29,7 @@ import supportRoutes from './routes/support';
 import providerRoutes from './routes/provider';
 import adminRoutes from './routes/admin';
 import transportationRoutes from './routes/transportation';
+import promotionRoutes from './routes/promotions';
 
 const app = express();
 
@@ -104,6 +105,7 @@ const startServer = async () => {
     app.use('/api/messages', messageRoutes);
     app.use('/api/notifications', notificationRoutes);
     app.use('/api/payments', paymentRoutes);
+    app.use('/api/promotions', promotionRoutes);
     app.use('/api/upload', uploadRoutes);
     app.use('/api/favorites', favoritesRoutes);
     app.use('/api/support', supportRoutes);

@@ -5,6 +5,10 @@ export interface IService extends Document {
   description: string;
   category: string;
   price: number;
+  promotionPercent?: number;
+  promotionStartDate?: Date;
+  promotionEndDate?: Date;
+  promotionStatus: 'ACTIVE' | 'SUSPENDED';
   currency: string;
   duration: number; // in minutes
   location?: string;
@@ -44,6 +48,10 @@ const serviceSchema = new Schema<IService>({
     required: true,
     min: 0
   },
+  promotionPercent: { type: Number, min: 1, max: 90 },
+  promotionStartDate: { type: Date },
+  promotionEndDate: { type: Date },
+  promotionStatus: { type: String, enum: ['ACTIVE', 'SUSPENDED'], default: 'ACTIVE' },
   currency: {
     type: String,
     default: 'TND',
@@ -109,6 +117,7 @@ serviceSchema.index({ title: 'text', description: 'text' });
 serviceSchema.index({ city: 1, country: 1 });
 serviceSchema.index({ category: 1 });
 serviceSchema.index({ price: 1 });
+serviceSchema.index({ status: 1, promotionStartDate: 1, promotionEndDate: 1 });
 serviceSchema.index({ status: 1 });
 serviceSchema.index({ isFeatured: 1 });
 serviceSchema.index({ providerId: 1 });

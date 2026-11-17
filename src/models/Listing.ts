@@ -9,6 +9,7 @@ export interface IListing extends Document {
   promotionPercent?: number;
   promotionStartDate?: Date;
   promotionEndDate?: Date;
+  promotionStatus: 'ACTIVE' | 'SUSPENDED';
   monthlyPrice?: number; // Prix mensuel si applicable
   pricingType: 'NIGHTLY' | 'MONTHLY' | 'BOTH'; // Type de prix
   currency: string;
@@ -70,6 +71,11 @@ const listingSchema = new Schema<IListing>({
   },
   promotionEndDate: {
     type: Date
+  },
+  promotionStatus: {
+    type: String,
+    enum: ['ACTIVE', 'SUSPENDED'],
+    default: 'ACTIVE'
   },
   monthlyPrice: {
     type: Number,

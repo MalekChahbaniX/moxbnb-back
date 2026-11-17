@@ -138,6 +138,7 @@ export const getPromotionalListings = async (req: Request, res: Response): Promi
     const now = new Date();
     const listings = await Listing.find({
       status: 'PUBLISHED',
+      promotionStatus: { $ne: 'SUSPENDED' },
       promotionPercent: { $gt: 0, $lte: 90 },
       promotionStartDate: { $lte: now },
       promotionEndDate: { $gt: now }

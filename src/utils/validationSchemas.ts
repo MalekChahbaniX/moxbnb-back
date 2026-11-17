@@ -170,17 +170,18 @@ export const createBookingSchema = Joi.object({
     'any.required': 'Check-in date is required'
   }),
   checkOut: Joi.string().when('type', {
-    is: 'SERVICE',
-    then: Joi.optional(),
-    otherwise: Joi.required().messages({
-      'any.required': 'Check-out date is required for properties and experiences'
-    })
+    is: 'PROPERTY',
+    then: Joi.required().messages({
+      'any.required': 'Check-out date is required for properties'
+    }),
+    otherwise: Joi.optional()
   }),
   guests: Joi.number().integer().min(1).max(50).required(),
   totalPrice: Joi.number().min(0).required().messages({
     'number.min': 'Total price must be a positive number',
     'any.required': 'Total price is required'
   }),
+  promoCode: Joi.string().trim().uppercase().min(3).max(32).optional(),
   currency: Joi.string().valid('TND', 'EUR', 'USD').default('TND'),
   paymentStatus: Joi.string().valid('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'REFUNDED', 'PARTIALLY_REFUNDED').default('PENDING'),
   paymentProvider: Joi.string().valid('STRIPE', 'KONNECT', 'FLOUCI', 'CLICKTOPAY').optional(),
